@@ -47,6 +47,16 @@ python backend/run_benchmarks.py --videos-enabled --log-level INFO
 
 See `docs/testing_strategy.md` for the full validation workflow.
 
+## Packaging
+Build the standalone executable with PyInstaller:
+
+```powershell
+pyinstaller backend\pyinstaller.spec --distpath dist --workpath build
+dist\WatermarkRemoverSuite\WatermarkRemoverSuite.exe --help
+```
+
+Refer to `docs/packaging.md` for additional details.
+
 ## Getting Started
 ```powershell
 python -m venv .venv
