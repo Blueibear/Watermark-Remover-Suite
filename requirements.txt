@@ -1,0 +1,7 @@
+numpy
+opencv-python
+moviepy
+PyYAML
+PyInstaller
+PyQt5
+GitPython

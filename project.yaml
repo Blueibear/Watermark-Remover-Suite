@@ -1,0 +1,326 @@
+meta:
+  project_name: "Watermark Remover Suite"
+  author: "James (Nasteeshirts)"
+  objective: >
+    Autonomous creation, benchmarking, documentation, packaging, signing, and publishing
+    of a lawful watermark-removal and image-restoration suite with optional AI components.
+  end_goal: >
+    Fully buildable, benchmarked, documented, packaged, signed, and released project
+    with an MSI/EXE installer ready for local or GitHub distribution.
+
+autonomous_execution:
+  auto_proceed_after_phase: true
+  allow_environment_activation: true
+  fail_on_manual_intervention: false
+  ignore_next_steps_prompts: true
+
+pre_execution:
+  - command: python -m venv .venv
+  - command: .venv\Scripts\Activate.ps1
+  - command: pip install --upgrade pip
+  - command: pip install -r requirements.txt || echo "Installing default stack (NumPy, OpenCV, MoviePy, PyYAML, PyInstaller, PyQt5, GitPython)"
+  - command: git init || echo "Repository already initialized"
+
+phases:
+  - name: "Phase 0 — Initialization & Environment Setup"
+    description: >
+      Create virtual environment, install dependencies, and establish directory structure.
+      Initialize Git repo and base documentation.
+    tasks:
+      - create_venv_and_install_dependencies
+      - scaffold_folders: [core, ui, cli, config, assets, tests, docs, installers, dist, benchmarks, backend, verification_reports, sample_inputs]
+      - create_readme_license_gitignore
+      - initialize_git_repository
+    outputs:
+      - .venv/
+      - requirements.txt
+      - README.md
+      - .git/
+    completion_criteria:
+      - environment_verified
+      - dependencies_installed
+    post_phase_actions:
+      - command: git add .
+      - command: git commit -m "Initial project scaffolding completed"
+      - command: echo "Phase 0 complete — automatically proceeding to Phase 1"
+    auto_continue: true
+
+  - name: "Phase 1 — Core Image Processing Engine"
+    description: >
+      Implement OpenCV/NumPy watermark removal for images via mask detection and inpainting.
+    tasks:
+      - implement_inpainting_mask_detection
+      - add_error_handling_and_logging
+    outputs:
+      - core/image_remover.py
+      - core/utils.py
+    completion_criteria:
+      - test_image_inpainting_passes
+    post_phase_actions:
+      - command: git add .
+      - command: git commit -m "Completed Phase 1 — Image processing engine implemented"
+      - command: echo "Proceeding automatically to Phase 2"
+    auto_continue: true
+
+  - name: "Phase 2 — Video Processing Engine"
+    description: >
+      Extend watermark removal to video using MoviePy; ensure sync and batch capability.
+    tasks:
+      - implement_framewise_processing
+      - integrate_audio_preservation
+      - add_batch_support
+    outputs:
+      - core/video_remover.py
+      - core/batch_manager.py
+    completion_criteria:
+      - test_video_removal_success
+    post_phase_actions:
+      - command: git add .
+      - command: git commit -m "Completed Phase 2 — Video processing engine implemented"
+      - command: echo "Proceeding automatically to Phase 3"
+    auto_continue: true
+
+  - name: "Phase 3 — Configuration & Logging"
+    description: >
+      Add YAML configuration system, structured logging, and adjustable quality settings.
+    tasks:
+      - create_config_yaml
+      - implement_logger_module
+      - integrate_config_loading
+    outputs:
+      - config/config.yaml
+      - core/logger.py
+    completion_criteria:
+      - config_and_logging_tested
+    auto_continue: true
+
+  - name: "Phase 4 — Command-Line Interface (CLI)"
+    description: >
+      Build argparse-based CLI with progress output and error summaries.
+    tasks:
+      - implement_cli_arguments
+      - connect_cli_to_core_functions
+    outputs:
+      - cli/main.py
+    completion_criteria:
+      - cli_commands_run_successfully
+    auto_continue: true
+
+  - name: "Phase 5 — Graphical User Interface (GUI)"
+    description: >
+      Create a PyQt5 GUI (fallback to Tkinter) with file picker, preview, and progress bar.
+    tasks:
+      - design_main_window
+      - integrate_preview_and_export
+      - connect_gui_to_core_functions
+    outputs:
+      - ui/main_window.py
+      - assets/icons/
+    completion_criteria:
+      - gui_loads_and_processes_images
+    auto_continue: true
+
+  - name: "Phase 6 — Simulation & Offline Test Assets"
+    description: >
+      Generate sample images/videos for offline validation and simulation.
+    tasks:
+      - generate_sample_images
+      - generate_sample_videos
+      - implement_core/simulator.py
+    outputs:
+      - assets/sample_images/
+      - assets/sample_videos/
+      - core/simulator.py
+    completion_criteria:
+      - simulation_runs_without_errors
+    auto_continue: true
+
+  - name: "Phase 7 — Automated Testing & Validation"
+    description: >
+      Add pytest suites for image, video, and CLI; produce XML reports.
+    tasks:
+      - implement_pytest_tests
+      - run_pytest_and_generate_report
+    outputs:
+      - tests/test_image_removal.py
+      - tests/test_video_removal.py
+      - tests/test_cli.py
+      - verification_reports/pytest-report.xml
+    completion_criteria:
+      - all_tests_pass
+    auto_continue: true
+
+  - name: "Phase 8 — Performance Optimization"
+    description: >
+      Benchmark and optimize OpenCV/NumPy operations; parallelize video processing.
+    tasks:
+      - add_threading_and_multiprocessing
+      - benchmark_core_algorithms
+    outputs:
+      - core/optimizer.py
+      - benchmarks/results/
+      - benchmarks/summary.md
+    completion_criteria:
+      - performance_targets_met
+    auto_continue: true
+
+  - name: "Phase 9 — Documentation & Help System"
+    description: >
+      Write user guide, developer guide, API reference, and help dialogs for CLI/GUI.
+    tasks:
+      - write_docs_and_tutorials
+      - implement_cli_help_and_gui_tooltips
+    outputs:
+      - docs/user_guide.md
+      - docs/developer_guide.md
+      - docs/api_reference.md
+    completion_criteria:
+      - documentation_complete
+    auto_continue: true
+
+  - name: "Phase 10 — Packaging with PyInstaller"
+    description: >
+      Bundle the project into a distributable EXE using PyInstaller with proper metadata.
+    tasks:
+      - create_pyinstaller_spec
+      - build_single_file_executable
+    outputs:
+      - dist/WatermarkRemoverSuite.exe
+      - build/watermark_remover.spec
+    completion_criteria:
+      - executable_build_verified
+    auto_continue: true
+
+  - name: "Phase 11 — Code Signing"
+    description: >
+      Apply Authenticode signing using signtool and PFX certificate; verify signature.
+    tasks:
+      - sign_executable_with_signtool
+      - verify_signature_validity
+    inputs:
+      certificate_path: "C:\\Certs\\rex_ai_codesign.pfx"
+      certificate_password: "yourpassword"
+    outputs:
+      - dist/WatermarkRemoverSuite_signed.exe
+      - signature_verification.log
+    completion_criteria:
+      - signature_verified
+    auto_continue: true
+
+  - name: "Phase 12 — Windows Installer Build & Signing"
+    description: >
+      Build MSI/EXE installer with Inno Setup 6, sign it, verify SHA256 checksums, and archive.
+    dependencies:
+      - pyinstaller
+      - pefile
+      - markdown
+    inputs:
+      dist_dir: "dist/"
+      installer_script: "installers/watermark_remover.iss"
+      output_dir: "installers/build/"
+      certificate_envs:
+        path: "CODESIGN_PFX_PATH"
+        password: "CODESIGN_PFX_PASSWORD"
+    tasks:
+      - write_inno_setup_template
+      - run_inno_compiler
+      - sign_installer_with_signtool
+      - verify_sha256_checksum
+      - archive_installer
+    outputs:
+      - installers/build/WatermarkRemoverSuite_Setup.exe
+      - installers/build/WatermarkRemoverSuite_Setup.msi
+      - installers/build/SHA256SUMS.txt
+    auto_continue: true
+
+  - name: "Phase 13 — GitHub Publishing & Release"
+    description: >
+      Automatically create or update a GitHub repository for the Watermark Remover Suite.
+      Push all validated source files, documentation, and signed installers.
+      Generate a tagged release (v1.0.0 or latest build) with attached artifacts.
+    dependencies:
+      - gitpython
+      - requests
+      - pyyaml
+    inputs:
+      repo_name: "Watermark-Remover-Suite"
+      repo_visibility: "private"
+      github_token_env: "GITHUB_TOKEN"
+      release_tag: "v1.0.0"
+      release_title: "Initial Stable Release"
+      release_description_file: "verification_reports/final_summary.md"
+      upload_artifacts:
+        - installers/build/WatermarkRemoverSuite_Setup.exe
+        - installers/build/WatermarkRemoverSuite_Setup.msi
+        - installers/build/SHA256SUMS.txt
+    tasks:
+      - verify_token_and_repo_access
+      - initialize_git_repo_if_missing
+      - commit_all_validated_files
+      - create_github_repo_if_absent
+      - push_source_to_github
+      - create_github_release
+      - upload_release_artifacts
+    outputs:
+      - .git/
+      - release_confirmation.json
+      - github_upload_log.txt
+    auto_continue: true
+
+  - name: "Phase 14 — Post-Release Verification"
+    description: >
+      Validate that the GitHub release and uploaded installers are intact, downloadable,
+      and match recorded SHA-256 hashes.
+    dependencies:
+      - requests
+      - hashlib
+      - pyyaml
+    tasks:
+      - fetch_latest_release_metadata
+      - verify_download_links
+      - recheck_sha256_hashes
+      - log_verification_results
+    outputs:
+      - verification_reports/release_integrity_report.md
+      - verification_reports/hash_verification.log
+    completion_criteria:
+      - release_tag_verified
+      - all_artifacts_accessible
+      - hashes_match_previous_records
+    auto_continue: true
+
+rules:
+  persistence: { save_logs: true, resume_from: "codex_progress.yaml" }
+  summarization: { trigger_threshold_tokens: 7000, output_file: "codex_summary.yaml" }
+  self_correction: { retry_on_error: true, max_retries: 3 }
+  benchmarking:
+    auto_run_after_each_phase: true
+    dataset_dir: "sample_inputs/"
+    results_dir: "benchmarks/results/"
+    summary_output: "benchmarks/summary.md"
+
+communication:
+  style: "structured and concise"
+  summarize_on_exit: true
+  logging_level: "INFO"
+
+constraints:
+  file_write_scope:
+    - backend/
+    - core/
+    - ui/
+    - cli/
+    - docs/
+    - tests/
+    - assets/
+    - benchmarks/
+    - dist/
+    - installers/
+  prohibited: [ system32/, user_home/ ]
+  testing_environment: "venv"
+
+codex_behavior:
+  planning_mode: "multi-phase"
+  execution_mode: "autonomous"
+  confirmation_required: false
+  auto_save_edits: true

@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.spec
+
+# Installer artifacts
+installers/build/
+*.exe
+*.msi
+*.zip
+
+# Logs and reports
+*.log
+verification_reports/*.md
+verification_reports/logs/
+
+# Benchmarks
+benchmarks/results/
+
+# IDE and tooling
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
