@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -24,7 +24,13 @@ INPAINT_METHODS = {
 class ImageWatermarkRemover:
     """High-level helper for removing watermarks from still images."""
 
-    def __init__(self, inpaint_radius: int = 3, method: str = "telea") -> None:
+    def __init__(
+        self,
+        inpaint_radius: int = 3,
+        method: str = "telea",
+        *,
+        auto_mask_defaults: Optional[Dict[str, Any]] = None,
+    ) -> None:
         if inpaint_radius <= 0:
             raise ValueError("inpaint_radius must be a positive integer.")
         if method not in INPAINT_METHODS:
@@ -32,6 +38,7 @@ class ImageWatermarkRemover:
         self.inpaint_radius = inpaint_radius
         self.method = method
         self._cv_method = INPAINT_METHODS[method]
+        self.auto_mask_defaults = dict(auto_mask_defaults or {})
         logger.debug(
             "Initialized ImageWatermarkRemover (radius=%s, method=%s)",
             self.inpaint_radius,
@@ -58,8 +65,11 @@ class ImageWatermarkRemover:
         if image is None or image.size == 0:
             raise ValueError("Cannot remove watermark from an empty image.")
 
-        auto_mask_kwargs = auto_mask_kwargs or {}
-        prepared_mask = utils.resolve_mask(mask, image, detector_kwargs=auto_mask_kwargs)
+        effective_mask_kwargs: Dict[str, Any] = dict(self.auto_mask_defaults)
+        if auto_mask_kwargs:
+            effective_mask_kwargs.update(auto_mask_kwargs)
+
+        prepared_mask = utils.resolve_mask(mask, image, detector_kwargs=effective_mask_kwargs)
         result = cv2.inpaint(image, prepared_mask, self.inpaint_radius, self._cv_method)
         logger.debug(
             "Inpainted image with radius=%s (method=%s).",
@@ -86,6 +96,16 @@ class ImageWatermarkRemover:
         mask_output_path = Path(output_path).with_suffix(".mask.png")
         utils.save_image(mask_output_path, mask_used)
         return Path(output_path), mask_output_path
+
+    @classmethod
+    def from_config(cls, config: Mapping[str, Any]) -> "ImageWatermarkRemover":
+        settings = dict(config.get("image_processing", {}))
+        detection_defaults = dict(settings.get("detection", {}))
+        return cls(
+            inpaint_radius=int(settings.get("inpaint_radius", 3)),
+            method=settings.get("inpaint_method", "telea"),
+            auto_mask_defaults=detection_defaults,
+        )
 
 
 __all__ = ["ImageWatermarkRemover"]
