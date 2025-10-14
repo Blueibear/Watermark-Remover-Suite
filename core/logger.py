@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from logging import Handler
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -14,6 +15,17 @@ DEFAULT_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 def _remove_handlers(handlers: Iterable[Handler]) -> None:
     for handler in handlers:
         handler.close()
+
+
+def _resolve_log_path(filename: str) -> Path:
+    expanded = Path(os.path.expandvars(filename)).expanduser()
+    try:
+        expanded.parent.mkdir(parents=True, exist_ok=True)
+        return expanded
+    except OSError:
+        fallback_dir = Path("./logs")
+        fallback_dir.mkdir(parents=True, exist_ok=True)
+        return fallback_dir / Path(filename).name
 
 
 def setup_logging(settings: Mapping[str, object], *, force: bool = False) -> None:
@@ -39,7 +51,7 @@ def setup_logging(settings: Mapping[str, object], *, force: bool = False) -> Non
         filename = file_settings.get("filename")
         if not filename:
             raise ValueError("File logging enabled but no filename provided.")
-        log_path = Path(filename)
+        log_path = _resolve_log_path(filename)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         rotate_bytes = int(file_settings.get("rotate_bytes", 1_048_576))
         backups = int(file_settings.get("backups", 5))

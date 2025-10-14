@@ -81,6 +81,18 @@ python backend\publish_release.py --repo Watermark-Remover-Suite `
 
 Refer to `docs/release_workflow.md` for details and future replacement with real publishing.
 
+## Post-Release Verification
+Mock integrity checks:
+
+```powershell
+python backend\verify_release.py `
+    --artifacts dist\WatermarkRemoverSuite_signed.exe installers\build\WatermarkRemoverSuite_Setup.exe `
+    --checksums installers\build\SHA256SUMS.txt `
+    --log verification_reports\hash_verification.log
+```
+
+See `docs/verification_workflow.md` for guidance on extending these checks.
+
 ## Getting Started
 ```powershell
 python -m venv .venv

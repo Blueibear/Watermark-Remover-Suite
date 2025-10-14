@@ -37,7 +37,7 @@ logging:
     format: "%(levelname)s | %(name)s | %(message)s"
   file:
     enabled: true
-    filename: "verification_reports/logs/watermark_remover.log"
+    filename: "%APPDATA%/WatermarkRemoverSuite/logs/watermark_remover.log"
     format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
     rotate_bytes: 1048576
     backups: 5

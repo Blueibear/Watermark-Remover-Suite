@@ -1,4 +1,5 @@
 import logging
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -56,23 +57,32 @@ class TestConfigurationAndLogging(unittest.TestCase):
         logging_settings = config["logging"]
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            log_path = Path(tmp_dir) / "suite.log"
+            expected_log_dir = Path(tmp_dir) / "WatermarkRemoverSuite" / "logs"
+            expected_log_path = expected_log_dir / "suite.log"
             overrides = logging_settings.copy()
             overrides["file"] = dict(overrides["file"])
-            overrides["file"]["filename"] = str(log_path)
+            overrides["file"]["filename"] = "%APPDATA%/WatermarkRemoverSuite/logs/suite.log"
             overrides["file"]["enabled"] = True
             overrides["console"] = {"enabled": False}
 
-            setup_logging(overrides, force=True)
-            logger = logging.getLogger("watermark.tests")
-            logger.info("log-line")
-            logging.shutdown()
+            original_appdata = os.environ.get("APPDATA")
+            os.environ["APPDATA"] = tmp_dir
+            try:
+                setup_logging(overrides, force=True)
+                logger = logging.getLogger("watermark.tests")
+                logger.info("log-line")
+                logging.shutdown()
 
-            self.assertTrue(log_path.exists(), "Log file was not created.")
-            self.assertGreater(log_path.stat().st_size, 0, "Log file is empty.")
+                self.assertTrue(expected_log_path.exists(), "Log file was not created.")
+                self.assertGreater(expected_log_path.stat().st_size, 0, "Log file is empty.")
 
-            # Reset logging to avoid dangling handlers once the temp directory is removed.
-            setup_logging({"level": "WARNING", "console": {"enabled": False}, "file": {"enabled": False}}, force=True)
+                # Reset logging to avoid dangling handlers once the temp directory is removed.
+                setup_logging({"level": "WARNING", "console": {"enabled": False}, "file": {"enabled": False}}, force=True)
+            finally:
+                if original_appdata is not None:
+                    os.environ["APPDATA"] = original_appdata
+                else:
+                    os.environ.pop("APPDATA", None)
 
 
 if __name__ == "__main__":
