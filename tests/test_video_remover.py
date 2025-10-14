@@ -4,41 +4,13 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-from moviepy import AudioArrayClip, ImageSequenceClip, VideoFileClip
+from moviepy import VideoFileClip
 
 from core import utils
 from core.batch_manager import BatchItem, BatchWatermarkProcessor
 from core.image_remover import ImageWatermarkRemover
 from core.video_remover import VideoWatermarkRemover
-from .helpers import create_synthetic_sample
-
-
-def _build_test_clip(tmp_dir: Path, fps: int = 5) -> tuple[Path, list[np.ndarray], list[np.ndarray]]:
-    base_frames = []
-    watermarked_frames_rgb = []
-    for _ in range(8):
-        base, watermarked = create_synthetic_sample()
-        base_frames.append(base)
-        watermarked_frames_rgb.append(cv2.cvtColor(watermarked, cv2.COLOR_BGR2RGB))
-
-    clip = ImageSequenceClip(watermarked_frames_rgb, fps=fps)
-    duration = clip.duration
-    sample_rate = 44100
-    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False, dtype=np.float32)
-    audio = (0.2 * np.sin(2 * np.pi * 440 * t)).astype(np.float32)
-    audio_clip = AudioArrayClip(audio.reshape(-1, 1), fps=sample_rate)
-    clip = clip.with_audio(audio_clip)
-
-    input_path = tmp_dir / "watermarked.mp4"
-    clip.write_videofile(
-        str(input_path),
-        codec="libx264",
-        audio_codec="aac",
-        fps=fps,
-        logger=None,
-    )
-    clip.close()
-    return input_path, base_frames, watermarked_frames_rgb
+from .helpers import create_synthetic_sample, create_test_video_clip
 
 
 class TestVideoWatermarkRemover(unittest.TestCase):
@@ -48,7 +20,7 @@ class TestVideoWatermarkRemover(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)
-            input_path, base_frames, watermarked_frames = _build_test_clip(tmp_dir)
+            input_path, base_frames, watermarked_frames = create_test_video_clip(tmp_dir)
             output_path = tmp_dir / "restored.mp4"
 
             remover.process_file(
@@ -97,7 +69,7 @@ class TestVideoWatermarkRemover(unittest.TestCase):
             image_input = tmp_dir / "watermarked.png"
             cv2.imwrite(str(image_input), watermarked_image)
 
-            video_input, _, _ = _build_test_clip(tmp_dir)
+            video_input, _, _ = create_test_video_clip(tmp_dir)
 
             image_output = tmp_dir / "restored.png"
             video_output = tmp_dir / "restored.mp4"
