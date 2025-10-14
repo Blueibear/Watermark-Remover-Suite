@@ -22,6 +22,15 @@ Watermark Remover Suite is a layered toolkit for removing watermarks from images
 - `sample_inputs/` &mdash; Sample media used for offline testing.
 - `tests/` &mdash; Automated test suites and fixtures.
 
+## Sample Assets
+Synthetic demo files live under `sample_inputs/`. Regenerate them any time with:
+
+```powershell
+python backend/generate_samples.py
+```
+
+More details are available in `docs/simulation_assets.md`.
+
 ## Getting Started
 ```powershell
 python -m venv .venv
