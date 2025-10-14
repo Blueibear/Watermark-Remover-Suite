@@ -24,6 +24,7 @@ installers/build/
 *.log
 verification_reports/*.md
 verification_reports/logs/
+.coverage
 
 # Benchmarks
 benchmarks/results/

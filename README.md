@@ -31,6 +31,22 @@ python backend/generate_samples.py
 
 More details are available in `docs/simulation_assets.md`.
 
+## Testing & Benchmarks
+Run the automated test suite with coverage:
+
+```powershell
+coverage run --source=core,cli,ui,backend -m unittest discover
+coverage xml -o benchmarks/results/coverage.xml
+```
+
+Generate benchmark timings on the sample assets:
+
+```powershell
+python backend/run_benchmarks.py --videos-enabled --log-level INFO
+```
+
+See `docs/testing_strategy.md` for the full validation workflow.
+
 ## Getting Started
 ```powershell
 python -m venv .venv
