@@ -74,7 +74,7 @@ class TestVideoWatermarkRemover(unittest.TestCase):
             image_output = tmp_dir / "restored.png"
             video_output = tmp_dir / "restored.mp4"
 
-            processor = BatchWatermarkProcessor()
+            processor = BatchWatermarkProcessor(config={"batch": {"max_workers": 2, "halt_on_error": False}})
             jobs = [
                 BatchItem(
                     media_type="image",

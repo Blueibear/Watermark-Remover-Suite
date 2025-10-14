@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
@@ -91,49 +92,65 @@ class BatchWatermarkProcessor:
             auto_mask_kwargs=auto_mask_kwargs,
         )
 
-    def process(self, items: Iterable[BatchItem]) -> List[BatchResult]:
-        results: List[BatchResult] = []
-        for item in items:
-            input_path = Path(item.input_path)
-            media_type = item.media_type.lower()
-            logger.info("Batch processing %s", input_path)
-            try:
-                auto_kwargs = self._resolve_auto_mask_kwargs(media_type, item.auto_mask_kwargs)
-                if media_type == "image":
-                    output_path, mask_path = self._process_image(item, auto_kwargs)
-                    results.append(
-                        BatchResult(
-                            success=True,
-                            media_type=media_type,
-                            input_path=input_path,
-                            output_path=output_path,
-                            mask_path=mask_path,
-                        )
-                    )
-                elif media_type == "video":
-                    output_path = self._process_video(item, auto_kwargs)
-                    results.append(
-                        BatchResult(
-                            success=True,
-                            media_type=media_type,
-                            input_path=input_path,
-                            output_path=output_path,
-                        )
-                    )
-                else:
-                    raise ValueError(f"Unsupported media type: {item.media_type}")
-            except Exception as exc:  # pragma: no cover - error path
-                logger.exception("Failed to process %s: %s", input_path, exc)
-                results.append(
-                    BatchResult(
-                        success=False,
-                        media_type=media_type,
-                        input_path=input_path,
-                        error=str(exc),
-                    )
+    def _execute_item(self, item: BatchItem) -> BatchResult:
+        input_path = Path(item.input_path)
+        media_type = item.media_type.lower()
+        logger.info("Batch processing %s", input_path)
+        auto_kwargs = self._resolve_auto_mask_kwargs(media_type, item.auto_mask_kwargs)
+        try:
+            if media_type == "image":
+                output_path, mask_path = self._process_image(item, auto_kwargs)
+                return BatchResult(
+                    success=True,
+                    media_type=media_type,
+                    input_path=input_path,
+                    output_path=output_path,
+                    mask_path=mask_path,
                 )
-                if self.halt_on_error:
+            if media_type == "video":
+                output_path = self._process_video(item, auto_kwargs)
+                return BatchResult(
+                    success=True,
+                    media_type=media_type,
+                    input_path=input_path,
+                    output_path=output_path,
+                )
+            raise ValueError(f"Unsupported media type: {item.media_type}")
+        except Exception as exc:  # pragma: no cover - error path
+            logger.exception("Failed to process %s: %s", input_path, exc)
+            return BatchResult(
+                success=False,
+                media_type=media_type,
+                input_path=input_path,
+                error=str(exc),
+            )
+
+    def process(self, items: Iterable[BatchItem]) -> List[BatchResult]:
+        item_list = list(items)
+        if not item_list:
+            return []
+
+        order_map = {Path(item.input_path): idx for idx, item in enumerate(item_list)}
+
+        if self.max_workers <= 1 or self.halt_on_error:
+            results: List[BatchResult] = []
+            for item in item_list:
+                result = self._execute_item(item)
+                results.append(result)
+                if self.halt_on_error and not result.success:
                     break
+            return results
+
+        results: List[BatchResult] = []
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_item = {executor.submit(self._execute_item, item): item for item in item_list}
+            for future in as_completed(future_to_item):
+                result = future.result()
+                results.append(result)
+                if self.halt_on_error and not result.success:
+                    executor.shutdown(cancel_futures=True)
+                    break
+        results.sort(key=lambda r: order_map.get(r.input_path, 0))
         return results
 
 
