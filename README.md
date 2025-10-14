@@ -68,6 +68,19 @@ Get-FileHash dist\WatermarkRemoverSuite_signed.exe -Algorithm SHA256 >> signatur
 
 See `docs/signing.md` for guidance on replacing this with real code signing.
 
+## Release Publishing
+Mock GitHub release automation:
+
+```powershell
+python backend\publish_release.py --repo Watermark-Remover-Suite `
+    --tag v1.0.0 --title "Initial Stable Release" `
+    --notes verification_reports\final_summary.md `
+    --artifacts dist\WatermarkRemoverSuite_signed.exe installers\build\WatermarkRemoverSuite_Setup.exe `
+    --output release_confirmation.json --log github_upload_log.txt
+```
+
+Refer to `docs/release_workflow.md` for details and future replacement with real publishing.
+
 ## Getting Started
 ```powershell
 python -m venv .venv
