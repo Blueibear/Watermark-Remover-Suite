@@ -22,7 +22,7 @@ installers/build/
 
 # Logs and reports
 *.log
-verification_reports/*.md
+
 verification_reports/logs/
 .coverage
 
@@ -36,3 +36,4 @@ benchmarks/results/
 *.swo
 Thumbs.db
 Desktop.ini
+
