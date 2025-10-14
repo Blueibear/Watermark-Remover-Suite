@@ -57,6 +57,17 @@ dist\WatermarkRemoverSuite\WatermarkRemoverSuite.exe --help
 
 Refer to `docs/packaging.md` for additional details.
 
+## Signing
+Mock signing workflow:
+
+```powershell
+python backend\sign_release.py --input dist\WatermarkRemoverSuite\WatermarkRemoverSuite.exe `
+    --output dist\WatermarkRemoverSuite_signed.exe --log signature_verification.log
+Get-FileHash dist\WatermarkRemoverSuite_signed.exe -Algorithm SHA256 >> signature_verification.log
+```
+
+See `docs/signing.md` for guidance on replacing this with real code signing.
+
 ## Getting Started
 ```powershell
 python -m venv .venv
