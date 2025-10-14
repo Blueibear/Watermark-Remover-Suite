@@ -38,6 +38,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="watermark-remover",
         description="Watermark Remover Suite command-line interface.",
+        epilog="Full documentation: docs/user_guide.md",
     )
     parser.add_argument(
         "--config",

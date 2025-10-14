@@ -112,6 +112,7 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         logging.getLogger().addHandler(self._log_handler)
 
         self._create_widgets()
+        self._set_status_help()
         self._connect_signals()
 
     # UI Construction -----------------------------------------------------------------
@@ -235,6 +236,11 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
 
     def _append_log(self, message: str) -> None:
         self.log_console.append(message)
+
+    def _set_status_help(self) -> None:
+        self.statusBar().showMessage(
+            "Need help? See docs/user_guide.md or press F1.", 5000
+        )
 
     def _set_busy(self, busy: bool) -> None:
         self.image_process_btn.setDisabled(busy)

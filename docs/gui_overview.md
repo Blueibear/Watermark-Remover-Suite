@@ -43,3 +43,4 @@ User Input → Validation → Background Worker (QThread) → Core Processors �
 - Implement `ui/main_window.py` with PyQt5.
 - Provide Tkinter fallback in `ui/fallback.py`.
 - Integrate CLI commands for automation parity.
+- Link UI help to `docs/user_guide.md` and `docs/developer_guide.md`.
