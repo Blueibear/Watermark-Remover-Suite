@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from logging import FileHandler
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple
 
@@ -44,6 +45,21 @@ except ImportError:  # pragma: no cover - fallback handled elsewhere
 
 
 logger = logging.getLogger(__name__)
+GUI_VALIDATION_LOG = Path("verification_reports/gui_validation.log")
+
+
+def _ensure_gui_log_handler() -> None:
+    GUI_VALIDATION_LOG.parent.mkdir(parents=True, exist_ok=True)
+    existing = [
+        handler
+        for handler in logger.handlers
+        if isinstance(handler, FileHandler)
+        and Path(getattr(handler, "baseFilename", "")).resolve() == GUI_VALIDATION_LOG.resolve()
+    ]
+    if not existing:
+        file_handler = FileHandler(GUI_VALIDATION_LOG, encoding="utf-8")
+        file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s"))
+        logger.addHandler(file_handler)
 
 
 class _WorkerSignals(QObject):
@@ -86,6 +102,7 @@ class _QtLogHandler(logging.Handler):
 class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration tests
     def __init__(self, config_path: Optional[Path] = None) -> None:
         if not PYQT_AVAILABLE:
+            logger.error("PyQt5 is not available. GUI cannot be launched.")
             raise RuntimeError("PyQt5 is not available. Cannot launch GUI.")
 
         super().__init__()
@@ -94,6 +111,8 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
 
         self.config = load_config(config_path or DEFAULT_CONFIG_PATH)
         setup_logging(self.config.get("logging", {}), force=True)
+        _ensure_gui_log_handler()
+        logger.info("MainWindow initialized with config from %s", config_path or DEFAULT_CONFIG_PATH)
 
         self.thread_pool = QThreadPool.globalInstance()
         self.image_remover = ImageWatermarkRemover.from_config(self.config)
@@ -352,4 +371,10 @@ def run_gui(config_path: Optional[Path] = None) -> None:  # pragma: no cover - m
     app = QApplication.instance() or QApplication(sys.argv)
     window = MainWindow(config_path=config_path)
     window.show()
-    sys.exit(app.exec_())
+    logger.info("GUI event loop starting.")
+    try:
+        exit_code = app.exec()
+    except AttributeError:  # PyQt5 < 5.15 compatibility
+        exit_code = app.exec_()
+    logger.info("GUI event loop exited with code %s", exit_code)
+    sys.exit(exit_code)
