@@ -1,0 +1,30 @@
+# --- Normalize all text files to use LF on checkout ---
+* text=auto
+
+# --- Explicit line endings ---
+*.py text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+# --- Binary files ---
+*.exe binary
+*.msi binary
+*.dll binary
+*.pfx binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.otf binary
+*.onnx binary
+
+# --- Prevent Git from attempting to diff certs or binaries ---
+*.pem binary
+*.key binary
+*.crt binary
