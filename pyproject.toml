@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "watermark-remover-suite"
+version = "0.1.0"
+description = "Watermark Remover Suite — LaMa/SD inpainting with temporal guidance"
+authors = [{ name = "Blueibear" }]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26",
+  "opencv-python>=4.8",
+  "scikit-image>=0.23",
+  "lpips>=0.1.4",
+  "Pillow>=10.0",
+  "tqdm>=4.66",
+  "rich>=13.7",
+  "ffmpeg-python>=0.2.0",
+  "torch>=2.2; platform_system != 'Darwin'",
+  "torchvision>=0.17; platform_system != 'Darwin'",
+  "einops>=0.7",
+]
+
+[project.optional-dependencies]
+sd = [
+  "diffusers[torch]>=0.30",
+  "transformers>=4.43",
+  "accelerate>=0.33",
+  "xformers>=0.0.27; platform_system == 'Linux'",
+]
+onx = ["onnxruntime-gpu>=1.18"]
+gui = ["PySide6>=6.6"]
+develop = ["pytest>=8.1", "black>=24.3", "ruff>=0.5", "mypy>=1.10"]
+
+[project.scripts]
+wmr = "watermark_remover.cli.wmr:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["watermark_remover*"]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]

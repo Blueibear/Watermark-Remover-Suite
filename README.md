@@ -10,8 +10,9 @@ Watermark Remover Suite is a layered toolkit for removing watermarks from images
 - Document validation, benchmarking, and release steps for auditing.
 
 ## Repository Layout
-- `core/` &mdash; Image and video processing engines, shared utilities.
-- `cli/` &mdash; Command-line entry points and argument parsing.
+- `watermark_remover/` &mdash; New MVP package with CLI, pipeline, models, and QC helpers.
+- `core/` &mdash; Legacy image and video processing engines, shared utilities.
+- `cli/` &mdash; Legacy command-line entry points and argument parsing.
 - `ui/` &mdash; GUI application code and related assets.
 - `config/` &mdash; YAML configuration files and loader utilities.
 - `backend/` &mdash; Automation helpers, packaging, and integration scripts.
@@ -31,21 +32,15 @@ python backend/generate_samples.py
 
 More details are available in `docs/simulation_assets.md`.
 
-## Testing & Benchmarks
-Run the automated test suite with coverage:
+## CLI (MVP Stub)
+The MVP CLI is exposed via the `wmr` entry point:
 
 ```powershell
-coverage run --source=core,cli,ui,backend -m unittest discover
-coverage xml -o benchmarks/results/coverage.xml
+wmr image input.jpg --out output.jpg --method telea --mask auto
+wmr video input.mp4 --out output.mp4 --method telea --window 48 --overlap 12
 ```
 
-Generate benchmark timings on the sample assets:
-
-```powershell
-python backend/run_benchmarks.py --videos-enabled --log-level INFO
-```
-
-See `docs/testing_strategy.md` for the full validation workflow.
+Use `--method lama` after placing `lama.onnx` inside `~/.wmr/models/`. Stable Diffusion integration is reserved for future work.
 
 ## Packaging
 Build the standalone executable with PyInstaller:
@@ -98,7 +93,18 @@ See `docs/verification_workflow.md` for guidance on extending these checks.
 python -m venv .venv
 .venv\Scripts\activate
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -e .
+```
+Optional extras:
+- `pip install -e .[onx]` to enable the LaMa ONNX backend (requires `onnxruntime`).
+- `pip install -e .[sd]` to prepare Stable Diffusion dependencies (integration pending).
+
+The legacy `requirements.txt` remains for backwards compatibility with earlier automation scripts.
+
+Prepare model cache directories with:
+
+```powershell
+python -m watermark_remover.models.download_models --all
 ```
 
 ## Development Workflow

@@ -5,3 +5,7 @@ PyYAML
 PyInstaller
 PyQt5
 GitPython
+tqdm
+rich
+ffmpeg-python
+scikit-image
