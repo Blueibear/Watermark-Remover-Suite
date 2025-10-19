@@ -1,95 +1,93 @@
-"""Mock post-release verification script."""
-
-from __future__ import annotations
-
-import argparse
+import os
+import sys
 import hashlib
+import requests
 from pathlib import Path
-from typing import Dict, List, Tuple
 
+# === CONFIG ===
+REPO = "Blueibear/Watermark-Remover-Suite"
+TAG = "v0.2.1"
+CHECKSUM_FILE = Path("installers/build/SHA256SUMS.txt")
+DOWNLOAD_DIR = Path("release_downloads")
 
-def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Mock release verification.")
-    parser.add_argument(
-        "--artifacts",
-        nargs="*",
-        default=[
-            "dist/WatermarkRemoverSuite_signed.exe",
-            "installers/build/WatermarkRemoverSuite_Setup.exe",
-        ],
-        help="Artifacts to verify.",
-    )
-    parser.add_argument(
-        "--checksums",
-        type=Path,
-        default=Path("installers/build/SHA256SUMS.txt"),
-        help="Checksum file (hash filename per line).",
-    )
-    parser.add_argument(
-        "--log",
-        type=Path,
-        default=Path("verification_reports/hash_verification.log"),
-        help="Log file to append verification results.",
-    )
-    return parser.parse_args(argv)
+# === GITHUB AUTH ===
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+if not GITHUB_TOKEN:
+    print("❌ Missing GITHUB_TOKEN environment variable.")
+    sys.exit(1)
 
+HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
+API_BASE = "https://api.github.com"
 
-def _load_checksums(path: Path) -> Dict[str, str]:
-    if not path.exists():
-        return {}
-    mapping: Dict[str, str] = {}
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def get_release_assets(repo: str, tag: str):
+    url = f"{API_BASE}/repos/{repo}/releases/tags/{tag}"
+    print(f"📡 Fetching release info: {url}")
+    r = requests.get(url, headers=HEADERS)
+    if r.status_code != 200:
+        print(f"❌ Failed to fetch release: {r.status_code} {r.text}")
+        sys.exit(1)
+    return r.json().get("assets", [])
+
+def download_asset(asset, target_dir: Path) -> Path:
+    name = asset["name"]
+    url = asset["browser_download_url"]
+    path = target_dir / name
+    print(f"⬇️ Downloading {name}...")
+    r = requests.get(url, headers=HEADERS, stream=True)
+    if r.status_code != 200:
+        print(f"❌ Failed to download {name}: {r.status_code}")
+        sys.exit(1)
+    with open(path, "wb") as f:
+        for chunk in r.iter_content(chunk_size=8192):
+            f.write(chunk)
+    return path
+
+def load_checksums(path: Path) -> dict:
+    checksums = {}
     for line in path.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if not line:
+        if not line.strip():
             continue
-        parts = line.split()
-        if len(parts) >= 2:
-            mapping[Path(parts[1]).name] = parts[0]
-    return mapping
+        hashval, filename = line.split()
+        checksums[filename.strip()] = hashval.strip()
+    return checksums
 
+def main():
+    if not CHECKSUM_FILE.exists():
+        print(f"❌ Missing checksum file: {CHECKSUM_FILE}")
+        sys.exit(1)
 
-def _hash_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(8192), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    DOWNLOAD_DIR.mkdir(exist_ok=True)
+    expected = load_checksums(CHECKSUM_FILE)
+    assets = get_release_assets(REPO, TAG)
 
+    if not assets:
+        print("❌ No assets found in release!")
+        sys.exit(1)
 
-def main(args: argparse.Namespace | None = None) -> Tuple[int, List[str]]:
-    if args is None:
-        args = parse_args()
+    mismatches = []
+    for asset in assets:
+        filename = asset["name"]
+        if filename not in expected:
+            print(f"⚠️ Skipping unknown file: {filename}")
+            continue
+        local_path = download_asset(asset, DOWNLOAD_DIR)
+        local_hash = sha256(local_path)
+        # ✅ Case-insensitive comparison
+        if local_hash.lower() != expected[filename].lower():
+            mismatches.append((filename, expected[filename], local_hash))
+        else:
+            print(f"✅ {filename} hash verified.")
 
-    checksum_map = _load_checksums(Path(args.checksums))
-    messages: List[str] = []
-    failures = 0
+    if mismatches:
+        print("\n❌ HASH MISMATCHES:")
+        for fname, expected_hash, actual_hash in mismatches:
+            print(f"   {fname}\n   expected: {expected_hash}\n   actual:   {actual_hash}")
+        sys.exit(1)
 
-    args.log.parent.mkdir(parents=True, exist_ok=True)
-    with args.log.open("a", encoding="utf-8") as handle:
-        for artifact_str in args.artifacts:
-            artifact = Path(artifact_str)
-            if not artifact.exists():
-                msg = f"Missing artifact: {artifact}"
-                messages.append(msg)
-                handle.write(msg + "\n")
-                failures += 1
-                continue
-
-            artifact_hash = _hash_file(artifact)
-            expected_hash = checksum_map.get(artifact.name)
-            if expected_hash and expected_hash.lower() == artifact_hash.lower():
-                msg = f"OK {artifact.name} {artifact_hash}"
-            elif expected_hash:
-                msg = f"HASH MISMATCH {artifact.name} expected={expected_hash} actual={artifact_hash}"
-                failures += 1
-            else:
-                msg = f"NO CHECKSUM {artifact.name} actual={artifact_hash}"
-            messages.append(msg)
-            handle.write(msg + "\n")
-
-    return failures, messages
-
+    print("\n🎉 All assets verified successfully!")
 
 if __name__ == "__main__":
-    code, _ = main()
-    raise SystemExit(code)
+    main()

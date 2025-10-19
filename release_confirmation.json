@@ -1,0 +1,10 @@
+{
+  "repository": "Blueibear/Watermark-Remover-Suite",
+  "tag": "v0.2.1",
+  "title": "October Stable Release",
+  "notes": "# Release Summary (Placeholder)\n\n- Version: v1.0.0\n- Release Title: Initial Stable Release (mock)\n- Notes:\n  - Source code packaged.\n  - Installers staged in `installers/build/`.\n  - Signed executable placeholder at `dist/WatermarkRemoverSuite_signed.exe`.\n",
+  "artifacts": [
+    "dist\\WatermarkRemoverSuite_signed.exe",
+    "installers\\build\\WatermarkRemoverSuite_Setup.exe"
+  ]
+}

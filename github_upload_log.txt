@@ -1,0 +1,4 @@
+Published release to Blueibear/Watermark-Remover-Suite v0.2.1 (October Stable Release)
+Notes: verification_reports\final_summary.md
+Artifacts: dist\WatermarkRemoverSuite_signed.exe, installers\build\WatermarkRemoverSuite_Setup.exe
+GITHUB_TOKEN=***
