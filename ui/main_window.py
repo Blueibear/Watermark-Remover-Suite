@@ -262,7 +262,7 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
 
     def _set_busy(self, busy: bool) -> None:
         self.image_process_btn.setDisabled(busy)
-       self.video_process_btn.setDisabled(busy)
+        self.video_process_btn.setDisabled(busy)
         if busy:
             QApplication.setOverrideCursor(Qt.WaitCursor)
         else:
@@ -408,4 +408,3 @@ if __name__ == "__main__":
         sys.exit(run_gui(show=True))
 
     sys.exit(run_gui(show=False, log_validation=True))
-
