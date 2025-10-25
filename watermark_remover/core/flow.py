@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
 import cv2
 import numpy as np
+import yaml
 
 
 @dataclass
@@ -15,6 +17,12 @@ class FlowConfig:
     backend: str = "auto"  # auto|raft|tvl1|farneback
     raft_weights: Optional[Path] = None
     device: str = "cuda"
+
+
+def _cfg():
+    """Load YAML config for RAFT model."""
+    p = Path("watermark_remover/models/model_config.yaml")
+    return yaml.safe_load(open(p, "r")) if p.exists() else {}
 
 
 class FlowEstimator:
@@ -27,42 +35,42 @@ class FlowEstimator:
             try:
                 from .raft_stub import RAFT
 
-                weights = self.cfg.raft_weights or (Path.home() / ".wmr" / "models" / "raft.pth")
-                if weights.exists():
-                    self._raft = RAFT.load_from_checkpoint(weights, device=self.cfg.device)
+                r = _cfg().get("raft", {})
+                wpath = self.cfg.raft_weights or Path(os.path.expanduser(r.get("weights_path", "~/.wmr/models/raft-kitti.torchscript.pt")))
+                device = r.get("device", self.cfg.device)
+                if wpath.exists():
+                    self._raft = RAFT.load_from_checkpoint(wpath, device=device)
                 elif self.cfg.backend == "raft":
-                    raise FileNotFoundError(f"RAFT weights not found at {weights}")
+                    raise FileNotFoundError(f"RAFT weights not found at {wpath}")
             except Exception:
                 self._raft = None
 
     @staticmethod
     def _to_gray_u8(img: np.ndarray) -> np.ndarray:
-        if img.ndim == 2:
-            gray = img
-        else:
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        if gray.dtype != np.uint8:
-            gray = np.clip(gray, 0, 255).astype(np.uint8)
-        return gray
+        """Convert image to grayscale uint8."""
+        g = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+        return g if g.dtype == np.uint8 else np.clip(g, 0, 255).astype(np.uint8)
 
     def flow(self, prev: np.ndarray, curr: np.ndarray) -> np.ndarray:
+        """Compute optical flow from prev to curr frame."""
         if self._raft is not None:
             return self._raft.flow(prev, curr)
-        if self.cfg.backend in ("tvl1",):
+        try:
             tvl1 = cv2.optflow.DualTVL1OpticalFlow_create()  # type: ignore[attr-defined]
             return tvl1.calc(self._to_gray_u8(prev), self._to_gray_u8(curr), None)
-        return cv2.calcOpticalFlowFarneback(
-            self._to_gray_u8(prev),
-            self._to_gray_u8(curr),
-            None,
-            0.5,
-            3,
-            15,
-            3,
-            5,
-            1.2,
-            0,
-        )
+        except Exception:
+            return cv2.calcOpticalFlowFarneback(
+                self._to_gray_u8(prev),
+                self._to_gray_u8(curr),
+                None,
+                0.5,
+                3,
+                15,
+                3,
+                5,
+                1.2,
+                0,
+            )
 
     @staticmethod
     def warp(img: np.ndarray, flow: np.ndarray) -> np.ndarray:

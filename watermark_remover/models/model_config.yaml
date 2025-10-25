@@ -1,0 +1,3 @@
+raft:
+  weights_path: "~/.wmr/models/raft-kitti.torchscript.pt"
+  device: "cuda"

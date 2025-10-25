@@ -26,8 +26,8 @@ def _add_common_video_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--temporal-guidance", default="none")
     parser.add_argument("--wm-estimation", default="none")
     parser.add_argument("--seam-blend", default="none")
-    parser.add_argument("--qc", default=None, help="e.g., warped_ssim>=0.92 (stubbed)")
-    parser.add_argument("--retry", type=int, default=0)
+    parser.add_argument("--qc", default="warped_ssim>=0.92", help="QC gate, e.g. warped_ssim>=0.92 or none")
+    parser.add_argument("--retry", type=int, default=1, help="Retries per failing frame")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -65,6 +65,8 @@ def _run_video(args: argparse.Namespace) -> int:
         seed=args.seed,
         window=args.window,
         overlap=args.overlap,
+        qc=args.qc,
+        retry=args.retry,
     )
     return 0
 

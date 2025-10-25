@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import hashlib
+import os
+import shlex
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -24,10 +29,31 @@ except Exception:  # pragma: no cover - LaMa optional
 from .flow import FlowEstimator
 from .temporal import blend_overlap, make_chunks
 
+try:
+    from watermark_remover.qc.quickcheck import parse_qc, qc_pass
+
+    _QC_AVAILABLE = True
+except Exception:  # pragma: no cover - QC optional
+    parse_qc = None  # type: ignore
+    qc_pass = None  # type: ignore
+    _QC_AVAILABLE = False
+
 Method = Literal["telea", "lama", "sd", "noop"]
 
 _LAMA_MODEL = Path.home() / ".wmr" / "models" / "lama.onnx"
 _LAMA_CACHE = None
+
+
+def _frame_seed(base: int, idx: int) -> int:
+    """Generate deterministic per-frame seed from base seed and frame index."""
+    h = hashlib.blake2b(f"{base}:{idx}".encode(), digest_size=8).digest()
+    return int.from_bytes(h, "little") & 0x7FFFFFFF
+
+
+def _remux_with_ffmpeg(src_mp4: str, dst_mp4: str) -> None:
+    """Remux video with ffmpeg to preserve color metadata."""
+    cmd = f'ffmpeg -y -i "{src_mp4}" -c:v libx264 -crf 16 -preset medium -pix_fmt yuv420p -movflags +faststart "{dst_mp4}"'
+    subprocess.run(shlex.split(cmd), check=True)
 
 
 def _imread(path: Path) -> np.ndarray:
@@ -112,6 +138,8 @@ def process_video(
     seed: int,
     window: int,
     overlap: int,
+    qc: str = "warped_ssim>=0.92",
+    retry: int = 1,
 ) -> None:
     cap = cv2.VideoCapture(str(path_in))
     if not cap.isOpened():
@@ -131,12 +159,23 @@ def process_video(
 
     if total == 0:
         total = len(frames)
-    writer = cv2.VideoWriter(str(path_out), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
 
-    masks = [
-        _auto_mask_bottom_right(frame, dilate=dilate) if mask_mode == "auto" else _auto_mask_bottom_right(frame, dilate=dilate)
-        for frame in frames
-    ]
+    # Use temporary output for ffmpeg remux
+    tmp_out = str(Path(path_out).with_suffix(".tmp.mp4"))
+    writer = cv2.VideoWriter(tmp_out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
+
+    # Generate masks and optionally dump them
+    masks = []
+    for i, frame in enumerate(frames):
+        mask = _auto_mask_bottom_right(frame, dilate=dilate) if mask_mode == "auto" else _auto_mask_bottom_right(frame, dilate=dilate)
+        masks.append(mask)
+        # Optional mask dumping
+        if os.environ.get("WMR_DUMP_MASKS") == "1":
+            Path("out/masks").mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(f"out/masks/{i:06d}.png", mask)
+
+    # Parse QC threshold
+    thr = parse_qc(qc) if _QC_AVAILABLE and parse_qc else None
 
     flow_estimator = FlowEstimator()
     chunks = make_chunks(len(frames), window, overlap)
@@ -144,8 +183,27 @@ def process_video(
 
     for chunk_index, (start, end) in enumerate(tqdm(chunks, desc="wmr-video")):
         current_clean = []
+        prev_clean = None
+
         for idx in range(start, end + 1):
-            current_clean.append(_inpaint(frames[idx], masks[idx], method, seed))
+            # Use deterministic per-frame seed
+            seed_i = _frame_seed(seed, idx)
+            cleaned = _inpaint(frames[idx], masks[idx], method, seed_i)
+
+            # QC + retry (skip first frame in a chunk and when QC disabled)
+            if thr is not None and _QC_AVAILABLE and qc_pass and idx > start and prev_clean is not None:
+                ok = qc_pass(frames[idx - 1], frames[idx], masks[idx], prev_clean, cleaned, thr=thr)
+                tries = 0
+                while not ok and tries < retry:
+                    bigger = min(11, dilate + 2 + tries)
+                    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (bigger, bigger))
+                    retry_mask = cv2.dilate(masks[idx], k)
+                    cleaned = _inpaint(frames[idx], retry_mask, method, _frame_seed(seed, idx) ^ (0x9E3779B1 * (tries + 1)))
+                    ok = qc_pass(frames[idx - 1], frames[idx], retry_mask, prev_clean, cleaned, thr=thr)
+                    tries += 1
+
+            current_clean.append(cleaned)
+            prev_clean = cleaned
 
         if chunk_index == 0:
             last_keep = end - overlap
@@ -173,3 +231,14 @@ def process_video(
             writer.write(frame)
 
     writer.release()
+
+    # Remux with ffmpeg to preserve color metadata
+    try:
+        _remux_with_ffmpeg(tmp_out, str(path_out))
+        os.remove(tmp_out)
+    except Exception:
+        # If ffmpeg fails, keep the temp file as the output
+        try:
+            os.rename(tmp_out, str(path_out))
+        except OSError:
+            pass
