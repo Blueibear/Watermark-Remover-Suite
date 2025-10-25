@@ -50,6 +50,39 @@ def masked_ssim(reference: np.ndarray, candidate: np.ndarray, mask: np.ndarray) 
     return float(score * (mask.mean() / 255.0 if mask.max() else 1.0))
 
 
+def masked_ssim_warped(prev_orig: np.ndarray, curr_orig: np.ndarray, mask: np.ndarray) -> float:
+    """Compute SSIM in masked region after optical flow warping."""
+    prev_warped = _warped(prev_orig, curr_orig)
+    mask_bin = (mask > 0).astype(np.uint8)
+
+    prev_gray = _to_gray(_ensure_uint8(prev_warped))
+    curr_gray = _to_gray(_ensure_uint8(curr_orig))
+
+    # Compute SSIM in masked region only
+    if mask_bin.sum() == 0:
+        return 1.0
+
+    # Extract masked regions
+    y_coords, x_coords = np.where(mask_bin > 0)
+    if len(y_coords) == 0:
+        return 1.0
+
+    y_min, y_max = y_coords.min(), y_coords.max() + 1
+    x_min, x_max = x_coords.min(), x_coords.max() + 1
+
+    prev_roi = prev_gray[y_min:y_max, x_min:x_max]
+    curr_roi = curr_gray[y_min:y_max, x_min:x_max]
+    mask_roi = mask_bin[y_min:y_max, x_min:x_max]
+
+    # Apply mask
+    prev_masked = prev_roi * (mask_roi > 0)
+    curr_masked = curr_roi * (mask_roi > 0)
+
+    # Compute SSIM
+    score = ssim(prev_masked, curr_masked, data_range=255, gaussian_weights=True)
+    return float(score)
+
+
 def lpips_metric(reference: np.ndarray, candidate: np.ndarray) -> Optional[float]:
     if _LPIPS_MODEL is None:
         return None
