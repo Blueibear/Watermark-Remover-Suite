@@ -21,7 +21,7 @@ except Exception:  # pragma: no cover - fallback when tqdm missing
 
 
 try:
-    from watermark_remover.core.inpaint_lama import inpaint_lama as lama_run
+    from .inpaint_lama import inpaint_lama as lama_run
 
     _LAMA_AVAILABLE = True
 except Exception:  # pragma: no cover - LaMa optional
@@ -29,7 +29,7 @@ except Exception:  # pragma: no cover - LaMa optional
     _LAMA_AVAILABLE = False
 
 try:
-    from watermark_remover.core.inpaint_sd import inpaint_sd as sd_run
+    from .inpaint_sd import inpaint_sd as sd_run
 
     _SD_AVAILABLE = True
 except Exception:  # pragma: no cover - SD optional
@@ -40,7 +40,7 @@ from .flow import FlowEstimator
 from .temporal import blend_overlap, make_chunks
 
 try:
-    from watermark_remover.qc.quickcheck import parse_qc, qc_pass
+    from ..qc.quickcheck import parse_qc, qc_pass
 
     _QC_AVAILABLE = True
 except Exception:  # pragma: no cover - QC optional

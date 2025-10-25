@@ -9,6 +9,22 @@ A powerful toolkit for removing watermarks from images and videos while preservi
 
 ---
 
+## Quickstart (CPU-only)
+
+Get started in seconds with CPU-only inpainting (no GPU required):
+
+```bash
+pip install -e .
+wmr image tests/fixtures/tiny.png --out out.png --method telea
+```
+
+For video processing:
+```bash
+wmr video tests/fixtures/tiny.mp4 --out out.mp4 --method telea
+```
+
+---
+
 ## Features
 
 - **Image Watermark Removal**: Remove watermarks from JPG, PNG, and other image formats
