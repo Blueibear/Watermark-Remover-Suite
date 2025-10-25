@@ -10,16 +10,16 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
 import yaml
+from watermark_remover.config import DEFAULT_CONFIG_PATH, load_config
+from watermark_remover.core.logger import setup_logging
 
-from config import DEFAULT_CONFIG_PATH, load_config
-from core import (
+from watermark_remover.core import (
     BatchItem,
     BatchResult,
     BatchWatermarkProcessor,
     ImageWatermarkRemover,
     VideoWatermarkRemover,
 )
-from core.logger import setup_logging
 
 logger = logging.getLogger(__name__)
 

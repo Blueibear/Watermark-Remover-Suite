@@ -4,9 +4,10 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+from watermark_remover.core.image_remover import ImageWatermarkRemover
 
-from core.image_remover import ImageWatermarkRemover
-from core import utils
+from watermark_remover.core import utils
+
 from .helpers import create_synthetic_sample
 
 
