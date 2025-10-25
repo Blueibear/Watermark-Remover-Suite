@@ -81,4 +81,10 @@ class FlowEstimator:
         grid_x, grid_y = np.meshgrid(np.arange(w), np.arange(h))
         map_x = (grid_x + flow[..., 0]).astype(np.float32)
         map_y = (grid_y + flow[..., 1]).astype(np.float32)
-        return cv2.remap(img, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        return cv2.remap(
+            img,
+            map_x,
+            map_y,
+            interpolation=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_REPLICATE,
+        )

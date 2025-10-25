@@ -6,7 +6,6 @@ import hashlib
 import os
 import shlex
 import subprocess
-import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -109,7 +108,8 @@ def _inpaint(img: np.ndarray, mask: np.ndarray, method: Method, seed: int) -> np
     if method == "lama":
         if not _LAMA_AVAILABLE or lama_run is None:
             raise RuntimeError(
-                "LaMa backend unavailable. Install onnxruntime and place lama.onnx under ~/.wmr/models/."
+                "LaMa backend unavailable. Install onnxruntime and place "
+                "lama.onnx under ~/.wmr/models/."
             )
         global _LAMA_CACHE
         if _LAMA_CACHE is None:
