@@ -10,7 +10,8 @@ from pathlib import Path
 from typing import List
 
 import requests
-from git import Repo, GitCommandError
+from git import GitCommandError, Repo
+
 
 def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Real GitHub release publisher.")

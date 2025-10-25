@@ -5,11 +5,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 from moviepy import VideoFileClip
+from watermark_remover.core.batch_manager import BatchItem, BatchWatermarkProcessor
+from watermark_remover.core.image_remover import ImageWatermarkRemover
+from watermark_remover.core.video_remover import VideoWatermarkRemover
 
-from core import utils
-from core.batch_manager import BatchItem, BatchWatermarkProcessor
-from core.image_remover import ImageWatermarkRemover
-from core.video_remover import VideoWatermarkRemover
+from watermark_remover.core import utils
+
 from .helpers import create_synthetic_sample, create_test_video_clip
 
 

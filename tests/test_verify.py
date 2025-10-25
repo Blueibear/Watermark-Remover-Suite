@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from backend import verify_release
+from watermark_remover.backend import verify_release
 
 
 class TestVerifyRelease(unittest.TestCase):
