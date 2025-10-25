@@ -56,21 +56,12 @@ pip install -e .
 
 ### Optional Features
 
-Install additional features based on your needs:
-
-**GUI Support:**
 ```bash
-pip install -e .[gui]
-```
-
-**Advanced Inpainting (LaMa ONNX):**
-```bash
-pip install -e .[onx]
-```
-
-**Stable Diffusion Integration:**
-```bash
-pip install -e .[sd]
+# Optional Installations
+pip install -e .[gui]       # GUI (PySide6)
+pip install -e .[onx]       # LaMa ONNX backend (requires onnxruntime)
+pip install -e .[sd]        # Stable Diffusion inpainting
+pip install -e .[develop]   # Dev tools (pytest, black, ruff, etc.)
 ```
 
 ---
@@ -78,8 +69,6 @@ pip install -e .[sd]
 ## Usage
 
 ### Command-Line Interface (CLI)
-
-The CLI provides a fast way to process files from the terminal.
 
 #### Process a Single Image
 
@@ -110,9 +99,8 @@ wmr video --input video.mp4 --output clean_video.mp4 --codec libx264 --preserve-
 
 #### Batch Processing
 
-Create a manifest file (e.g., `batch.yaml`) listing your files:
-
 ```yaml
+# batch.yaml
 - type: image
   input: images/photo1.jpg
   output: results/photo1_clean.jpg
@@ -127,7 +115,6 @@ Create a manifest file (e.g., `batch.yaml`) listing your files:
   output: results/clip1_clean.mp4
 ```
 
-Run batch processing:
 ```bash
 wmr batch --manifest batch.yaml
 ```
@@ -166,38 +153,19 @@ wmr batch --manifest batch.yaml
 
 ### Graphical User Interface (GUI)
 
-Launch the GUI application for a more visual workflow:
-
 ```bash
 python -m ui.main_window
 ```
-
-The GUI allows you to:
-- Browse and select input files
-- Preview images before/after processing
-- Adjust inpainting parameters with visual feedback
-- Monitor processing progress
-- View processing logs in real-time
 
 ---
 
 ## Configuration
 
-The tool uses a YAML configuration file (default: `config/default.yaml`) to control processing behavior. You can customize settings like:
-
-- Inpainting methods and parameters
-- Automatic mask detection thresholds
-- Video encoding options
-- Batch processing concurrency
-- Logging preferences
-
-Create a custom configuration file and use it with:
+Example config usage:
 
 ```bash
 wmr image --input photo.jpg --output result.jpg --config my_config.yaml
 ```
-
-Example configuration structure:
 
 ```yaml
 image_processing:
@@ -245,7 +213,7 @@ logging:
 
 1. **Use Custom Masks**: For best results, provide a binary mask highlighting the watermark region
 2. **Adjust Threshold**: If automatic detection misses the watermark, lower the `--auto-threshold` value
-3. **Increase Radius**: For larger watermarks, increase `--inpaint-radius` (try values 5-10)
+3. **Increase Radius**: For larger watermarks, increase `--inpaint-radius` (try values 5–10)
 4. **Video Performance**: Enable `--reuse-mask` for watermarks in consistent positions
 5. **Batch Processing**: Use batch mode for processing multiple files efficiently
 
