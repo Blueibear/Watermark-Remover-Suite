@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
-from watermark_remover.core.pipeline import process_image, process_video
+from ..core.pipeline import process_image, process_video
 
 
 def _add_common_image_args(parser: argparse.ArgumentParser) -> None:

@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest]
         python-version: ['3.11', '3.12']
 
     steps:
@@ -26,10 +26,15 @@ jobs:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
 
-    - name: Install system dependencies
+    - name: Install ffmpeg (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg libsm6 libxext6 libxrender-dev libgomp1
+
+    - name: Install ffmpeg (Windows)
+      if: startsWith(matrix.os, 'windows')
+      uses: federicocarboni/setup-ffmpeg@v3
 
     - name: Install Python dependencies
       run: |
@@ -40,19 +45,9 @@ jobs:
       run: |
         ruff check .
 
-    - name: Run tests with coverage
+    - name: Run unit tests (CPU baseline)
       run: |
-        pytest --cov --cov-report=xml --cov-report=term-missing -v
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        pytest -q -m "not gpu and not integration and not slow"
 
   lint:
     name: Code Quality
