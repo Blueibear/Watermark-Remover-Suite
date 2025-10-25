@@ -9,6 +9,16 @@ description = "Watermark Remover Suite — LaMa/SD inpainting with temporal guid
 authors = [{ name = "Blueibear" }]
 readme = "README.md"
 requires-python = ">=3.11"
+keywords = ["watermark", "removal", "inpainting", "lama", "stable-diffusion", "video-processing"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Multimedia :: Graphics",
+  "Topic :: Multimedia :: Video",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
 dependencies = [
   "numpy>=1.26",
   "opencv-python>=4.8",
@@ -17,7 +27,9 @@ dependencies = [
   "Pillow>=10.0",
   "tqdm>=4.66",
   "rich>=13.7",
+  "pyyaml>=6.0",
   "ffmpeg-python>=0.2.0",
+  "moviepy>=1.0.3",
   "torch>=2.2; platform_system != 'Darwin'",
   "torchvision>=0.17; platform_system != 'Darwin'",
   "einops>=0.7",
@@ -32,7 +44,8 @@ sd = [
 ]
 onx = ["onnxruntime-gpu>=1.18"]
 gui = ["PySide6>=6.6"]
-develop = ["pytest>=8.1", "black>=24.3", "ruff>=0.5", "mypy>=1.10"]
+models = ["requests>=2.31"]
+develop = ["pytest>=8.1", "black>=24.3", "ruff>=0.5", "mypy>=1.10", "requests>=2.31"]
 
 [project.scripts]
 wmr = "watermark_remover.cli.wmr:main"
