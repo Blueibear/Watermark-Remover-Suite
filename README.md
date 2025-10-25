@@ -55,8 +55,11 @@ wmr image input.jpg --out output.jpg --method telea --mask auto
 wmr video input.mp4 --out output.mp4 --method telea --window 48 --overlap 12
 ```
 
-Use `--method lama` after placing `lama.onnx` inside `~/.wmr/models/`.  
-Stable Diffusion integration is reserved for future work.
+**Available methods:**
+- `telea` — Fast OpenCV-based inpainting (default, CPU-only)
+- `lama` — LaMa ONNX model (requires `lama.onnx` in `~/.wmr/models/` and `pip install -e .[onx]`)
+- `sd` — Stable Diffusion inpainting (requires `pip install -e .[sd]`, downloads model on first use)
+- `noop` — No-op pass-through (for testing)
 
 ---
 
@@ -153,7 +156,9 @@ Optional extras:
 
 ```bash
 pip install -e .[onx]   # LaMa ONNX backend (requires onnxruntime)
-pip install -e .[sd]    # Stable Diffusion dependencies (integration pending)
+pip install -e .[sd]    # Stable Diffusion inpainting (diffusers, transformers, accelerate)
+pip install -e .[gui]   # PySide6 alternative GUI
+pip install -e .[develop]  # Development tools (pytest, black, ruff, mypy)
 ```
 
 Legacy `requirements.txt` available for early-phase automation compatibility.

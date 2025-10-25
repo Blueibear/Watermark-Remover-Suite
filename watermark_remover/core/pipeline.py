@@ -26,6 +26,14 @@ except Exception:  # pragma: no cover - LaMa optional
     lama_run = None  # type: ignore
     _LAMA_AVAILABLE = False
 
+try:
+    from watermark_remover.core.inpaint_sd import inpaint_sd as sd_run
+
+    _SD_AVAILABLE = True
+except Exception:  # pragma: no cover - SD optional
+    sd_run = None  # type: ignore
+    _SD_AVAILABLE = False
+
 from .flow import FlowEstimator
 from .temporal import blend_overlap, make_chunks
 
@@ -42,6 +50,7 @@ Method = Literal["telea", "lama", "sd", "noop"]
 
 _LAMA_MODEL = Path.home() / ".wmr" / "models" / "lama.onnx"
 _LAMA_CACHE = None
+_SD_MODEL_ID = "stabilityai/stable-diffusion-2-inpainting"
 
 
 def _frame_seed(base: int, idx: int) -> int:
@@ -106,7 +115,19 @@ def _inpaint(img: np.ndarray, mask: np.ndarray, method: Method, seed: int) -> np
             _LAMA_CACHE = _LAMA_MODEL
         return lama_run(img, mask, model_path=_LAMA_CACHE, device="auto")
     if method == "sd":
-        raise NotImplementedError("Stable Diffusion inpainting not available in MVP stub.")
+        if not _SD_AVAILABLE or sd_run is None:
+            raise RuntimeError(
+                "Stable Diffusion backend unavailable. Install with: pip install -e .[sd]"
+            )
+        return sd_run(
+            img,
+            mask,
+            model_id=_SD_MODEL_ID,
+            device="auto",
+            seed=seed,
+            num_inference_steps=50,
+            guidance_scale=7.5,
+        )
     raise ValueError(f"Unsupported method: {method}")
 
 
