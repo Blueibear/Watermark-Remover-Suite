@@ -25,6 +25,7 @@ class TestPyQtMainWindow(unittest.TestCase):
 
 class TestTkFallback(unittest.TestCase):
     @unittest.skipUnless(fallback_module.TK_AVAILABLE, "Tkinter not available")
+    @unittest.skipIf(os.environ.get("DISPLAY", "") == "", "No display available in CI")
     def test_fallback_app_initialises(self) -> None:
         root = fallback_module.tk.Tk()
         root.withdraw()
