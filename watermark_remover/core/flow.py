@@ -36,7 +36,10 @@ class FlowEstimator:
                 from .raft_stub import RAFT
 
                 r = _cfg().get("raft", {})
-                wpath = self.cfg.raft_weights or Path(os.path.expanduser(r.get("weights_path", "~/.wmr/models/raft-kitti.torchscript.pt")))
+                default_path = "~/.wmr/models/raft-kitti.torchscript.pt"
+                wpath = self.cfg.raft_weights or Path(
+                    os.path.expanduser(r.get("weights_path", default_path))
+                )
                 device = r.get("device", self.cfg.device)
                 if wpath.exists():
                     self._raft = RAFT.load_from_checkpoint(wpath, device=device)
