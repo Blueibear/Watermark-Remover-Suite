@@ -38,7 +38,10 @@ def _apply_watermark(image: np.ndarray, text: str, seed: int) -> np.ndarray:
     watermarked = image.copy()
     font_scale = rng.uniform(1.2, 2.0)
     thickness = rng.integers(2, 5)
-    position = (rng.integers(10, image.shape[1] // 3), rng.integers(image.shape[0] // 2, image.shape[0] - 10))
+    position = (
+        rng.integers(10, image.shape[1] // 3),
+        rng.integers(image.shape[0] // 2, image.shape[0] - 10),
+    )
     color = tuple(int(c) for c in rng.integers(200, 255, size=3))
     cv2.putText(
         watermarked,
@@ -53,7 +56,9 @@ def _apply_watermark(image: np.ndarray, text: str, seed: int) -> np.ndarray:
     return watermarked
 
 
-def _save_image_pair(output_dir: Path, index: int, base: np.ndarray, watermarked: np.ndarray) -> None:
+def _save_image_pair(
+    output_dir: Path, index: int, base: np.ndarray, watermarked: np.ndarray
+) -> None:
     base_path = output_dir / f"sample_{index:02d}_base.png"
     watermarked_path = output_dir / f"sample_{index:02d}_watermarked.png"
     mask_path = output_dir / f"sample_{index:02d}_mask.png"
@@ -113,18 +118,46 @@ def generate_videos(output_dir: Path, count: int = DEFAULT_VIDEO_COUNT) -> List[
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate sample media assets.")
-    parser.add_argument("--images-dir", type=Path, default=Path("sample_inputs/images"), help="Directory for sample images.")
-    parser.add_argument("--videos-dir", type=Path, default=Path("sample_inputs/videos"), help="Directory for sample videos.")
-    parser.add_argument("--image-count", type=int, default=DEFAULT_IMAGE_COUNT, help="Number of synthetic images to generate.")
-    parser.add_argument("--video-count", type=int, default=DEFAULT_VIDEO_COUNT, help="Number of synthetic videos to generate.")
-    parser.add_argument("--videos", action=argparse.BooleanOptionalAction, default=True, help="Enable or disable video generation.")
+    parser.add_argument(
+        "--images-dir",
+        type=Path,
+        default=Path("sample_inputs/images"),
+        help="Directory for sample images.",
+    )
+    parser.add_argument(
+        "--videos-dir",
+        type=Path,
+        default=Path("sample_inputs/videos"),
+        help="Directory for sample videos.",
+    )
+    parser.add_argument(
+        "--image-count",
+        type=int,
+        default=DEFAULT_IMAGE_COUNT,
+        help="Number of synthetic images to generate.",
+    )
+    parser.add_argument(
+        "--video-count",
+        type=int,
+        default=DEFAULT_VIDEO_COUNT,
+        help="Number of synthetic videos to generate.",
+    )
+    parser.add_argument(
+        "--videos",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable or disable video generation.",
+    )
     parser.add_argument("--log-level", default="INFO", help="Logging verbosity level.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO), format="%(levelname)s | %(message)s")
+    logging.basicConfig(
+        level=getattr(logging, args.log_level.upper(), logging.INFO),
+        format="%(levelname)s | %(message)s",
+    )
 
     logger.info("Generating sample images into %s", args.images_dir)
     generate_images(args.images_dir, count=args.image_count)

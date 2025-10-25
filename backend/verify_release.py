@@ -19,8 +19,10 @@ if not GITHUB_TOKEN:
 HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
 API_BASE = "https://api.github.com"
 
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 def get_release_assets(repo: str, tag: str):
     url = f"{API_BASE}/repos/{repo}/releases/tags/{tag}"
@@ -30,6 +32,7 @@ def get_release_assets(repo: str, tag: str):
         print(f"❌ Failed to fetch release: {r.status_code} {r.text}")
         sys.exit(1)
     return r.json().get("assets", [])
+
 
 def download_asset(asset, target_dir: Path) -> Path:
     name = asset["name"]
@@ -45,6 +48,7 @@ def download_asset(asset, target_dir: Path) -> Path:
             f.write(chunk)
     return path
 
+
 def load_checksums(path: Path) -> dict:
     checksums = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -53,6 +57,7 @@ def load_checksums(path: Path) -> dict:
         hashval, filename = line.split()
         checksums[filename.strip()] = hashval.strip()
     return checksums
+
 
 def main():
     if not CHECKSUM_FILE.exists():
@@ -88,6 +93,7 @@ def main():
         sys.exit(1)
 
     print("\n🎉 All assets verified successfully!")
+
 
 if __name__ == "__main__":
     main()

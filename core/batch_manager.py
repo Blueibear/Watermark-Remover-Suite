@@ -67,7 +67,9 @@ class BatchWatermarkProcessor:
                 video_remover = VideoWatermarkRemover(image_remover=self.image_remover)
         self.video_remover = video_remover
 
-    def _resolve_auto_mask_kwargs(self, media_type: MediaType, overrides: Optional[Dict]) -> Optional[Dict]:
+    def _resolve_auto_mask_kwargs(
+        self, media_type: MediaType, overrides: Optional[Dict]
+    ) -> Optional[Dict]:
         if overrides:
             return overrides
         if media_type == "image":
@@ -76,7 +78,9 @@ class BatchWatermarkProcessor:
             return dict(self.video_remover.auto_mask_defaults)
         return overrides
 
-    def _process_image(self, item: BatchItem, auto_mask_kwargs: Optional[Dict]) -> Tuple[Path, Path]:
+    def _process_image(
+        self, item: BatchItem, auto_mask_kwargs: Optional[Dict]
+    ) -> Tuple[Path, Path]:
         return self.image_remover.process_file(
             item.input_path,
             item.output_path,

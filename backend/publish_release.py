@@ -12,9 +12,12 @@ from typing import List
 import requests
 from git import Repo, GitCommandError
 
+
 def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Real GitHub release publisher.")
-    parser.add_argument("--repo", default="Blueibear/Watermark-Remover-Suite", help="Repository slug (owner/repo).")
+    parser.add_argument(
+        "--repo", default="Blueibear/Watermark-Remover-Suite", help="Repository slug (owner/repo)."
+    )
     parser.add_argument("--tag", default="v1.0.0", help="Release tag.")
     parser.add_argument("--title", default="Initial Stable Release", help="Release title.")
     parser.add_argument(
@@ -46,12 +49,15 @@ def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     )
     return parser.parse_args(argv)
 
+
 def _read_notes(path: Path) -> str:
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
 
 def _fail(msg: str):
     print(f"❌ {msg}", file=sys.stderr)
     sys.exit(1)
+
 
 def _ensure_tag_pushed(tag: str):
     try:
@@ -64,6 +70,7 @@ def _ensure_tag_pushed(tag: str):
             print(f"✅ Tag {tag} already exists.")
     except GitCommandError as e:
         _fail(f"Git error: {e}")
+
 
 def _create_release(repo_slug: str, tag: str, title: str, notes: str, token: str) -> str:
     print("🚀 Creating GitHub release...")
@@ -84,6 +91,7 @@ def _create_release(repo_slug: str, tag: str, title: str, notes: str, token: str
         _fail(f"Failed to create release: {response.status_code}\n{response.text}")
     return response.json()["upload_url"].split("{")[0]
 
+
 def _upload_file(upload_url: str, filepath: Path, token: str):
     headers = {
         "Authorization": f"token {token}",
@@ -91,10 +99,13 @@ def _upload_file(upload_url: str, filepath: Path, token: str):
     }
     with open(filepath, "rb") as f:
         print(f"📤 Uploading {filepath.name}...")
-        response = requests.post(f"{upload_url}?name={filepath.name}", headers=headers, data=f.read())
+        response = requests.post(
+            f"{upload_url}?name={filepath.name}", headers=headers, data=f.read()
+        )
         if response.status_code >= 300:
             _fail(f"Failed to upload {filepath.name}: {response.status_code}\n{response.text}")
         print(f"✅ Uploaded {filepath.name}")
+
 
 def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
@@ -139,6 +150,6 @@ def main(args: argparse.Namespace | None = None) -> None:
 
     print("🎉 GitHub release published successfully!")
 
+
 if __name__ == "__main__":
     main()
-

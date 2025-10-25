@@ -77,7 +77,10 @@ class TestConfigurationAndLogging(unittest.TestCase):
                 self.assertGreater(expected_log_path.stat().st_size, 0, "Log file is empty.")
 
                 # Reset logging to avoid dangling handlers once the temp directory is removed.
-                setup_logging({"level": "WARNING", "console": {"enabled": False}, "file": {"enabled": False}}, force=True)
+                setup_logging(
+                    {"level": "WARNING", "console": {"enabled": False}, "file": {"enabled": False}},
+                    force=True,
+                )
             finally:
                 if original_appdata is not None:
                     os.environ["APPDATA"] = original_appdata

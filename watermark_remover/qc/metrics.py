@@ -34,12 +34,16 @@ def _ensure_uint8(img: np.ndarray) -> np.ndarray:
 
 
 def _warped(prev: np.ndarray, curr: np.ndarray) -> np.ndarray:
-    flow = cv2.calcOpticalFlowFarneback(_to_gray(prev), _to_gray(curr), None, 0.5, 3, 15, 3, 5, 1.2, 0)
+    flow = cv2.calcOpticalFlowFarneback(
+        _to_gray(prev), _to_gray(curr), None, 0.5, 3, 15, 3, 5, 1.2, 0
+    )
     h, w = flow.shape[:2]
     grid_x, grid_y = np.meshgrid(np.arange(w), np.arange(h))
     map_x = (grid_x + flow[..., 0]).astype(np.float32)
     map_y = (grid_y + flow[..., 1]).astype(np.float32)
-    return cv2.remap(prev, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+    return cv2.remap(
+        prev, map_x, map_y, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE
+    )
 
 
 def masked_ssim(reference: np.ndarray, candidate: np.ndarray, mask: np.ndarray) -> float:

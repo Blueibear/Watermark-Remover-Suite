@@ -22,7 +22,9 @@ def make_chunks(n_frames: int, window: int, overlap: int) -> List[Tuple[int, int
     return chunks
 
 
-def blend_overlap(prev_clean: np.ndarray, curr_clean: np.ndarray, flow_prev_to_curr: np.ndarray, alpha: float) -> np.ndarray:
+def blend_overlap(
+    prev_clean: np.ndarray, curr_clean: np.ndarray, flow_prev_to_curr: np.ndarray, alpha: float
+) -> np.ndarray:
     warped_prev = FlowEstimator.warp(prev_clean, flow_prev_to_curr)
     return (
         warped_prev.astype(np.float32) * alpha + curr_clean.astype(np.float32) * (1.0 - alpha)
