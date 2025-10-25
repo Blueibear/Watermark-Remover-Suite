@@ -40,8 +40,14 @@ try:
     PYQT_AVAILABLE = True
 except ImportError:  # pragma: no cover - fallback handled elsewhere
     PYQT_AVAILABLE = False
+    # Stub classes for when PyQt5 is not available
     QApplication = object  # type: ignore
     QMainWindow = object  # type: ignore
+    QObject = object  # type: ignore
+    QRunnable = object  # type: ignore
+    Qt = object  # type: ignore
+    QThreadPool = object  # type: ignore
+    pyqtSignal = lambda *args: None  # type: ignore
 
 
 logger = logging.getLogger(__name__)

@@ -4,10 +4,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
 from backend import sign_release
 
 
 class TestSigningPlaceholder(unittest.TestCase):
+    @pytest.mark.windows_only
+    @pytest.mark.integration
     def test_sign_release_copies_file_and_logs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)

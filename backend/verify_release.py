@@ -1,8 +1,10 @@
 import os
 import sys
 import hashlib
+import argparse
 import requests
 from pathlib import Path
+from typing import Tuple, List
 
 # === CONFIG ===
 REPO = "Blueibear/Watermark-Remover-Suite"
@@ -12,15 +14,16 @@ DOWNLOAD_DIR = Path("release_downloads")
 
 # === GITHUB AUTH ===
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
-if not GITHUB_TOKEN:
-    print("❌ Missing GITHUB_TOKEN environment variable.")
-    sys.exit(1)
-
-HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"}
+HEADERS = {"Authorization": f"token {GITHUB_TOKEN}"} if GITHUB_TOKEN else {}
 API_BASE = "https://api.github.com"
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+# Alias for tests
+def _hash_file(path: Path) -> str:
+    """Compute SHA256 hash of a file (alias for sha256)."""
+    return sha256(path)
 
 def get_release_assets(repo: str, tag: str):
     url = f"{API_BASE}/repos/{repo}/releases/tags/{tag}"
@@ -54,7 +57,70 @@ def load_checksums(path: Path) -> dict:
         checksums[filename.strip()] = hashval.strip()
     return checksums
 
-def main():
+def parse_args(args: List[str]) -> argparse.Namespace:
+    """Parse command-line arguments for local verification."""
+    parser = argparse.ArgumentParser(description="Verify release artifacts")
+    parser.add_argument("--artifacts", nargs="+", help="Artifact files to verify")
+    parser.add_argument("--checksums", help="Checksum file path")
+    parser.add_argument("--log", help="Log file path")
+    return parser.parse_args(args)
+
+def main(args: argparse.Namespace = None) -> Tuple[int, List[str]]:
+    """Main verification function. Returns (exit_code, messages)."""
+    messages = []
+
+    # Handle both CLI usage (no args) and test usage (with args)
+    if args is None:
+        return _main_cli()
+
+    # Test mode: verify local artifacts
+    if hasattr(args, "log") and args.log:
+        log_path = Path(args.log)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.touch()
+
+    if not hasattr(args, "artifacts") or not args.artifacts:
+        msg = "No artifacts specified"
+        messages.append(msg)
+        return (1, messages)
+
+    for artifact_path in args.artifacts:
+        artifact = Path(artifact_path)
+        if not artifact.exists():
+            msg = f"Missing artifact: {artifact.name}"
+            messages.append(msg)
+            return (1, messages)
+
+        # If checksums file provided, verify
+        if hasattr(args, "checksums") and args.checksums:
+            checksums_path = Path(args.checksums)
+            if checksums_path.exists():
+                expected = load_checksums(checksums_path)
+                actual_hash = sha256(artifact)
+                expected_hash = expected.get(artifact.name, "")
+                if actual_hash.lower() == expected_hash.lower():
+                    msg = f"OK: {artifact.name}"
+                    messages.append(msg)
+                else:
+                    msg = f"MISMATCH: {artifact.name}"
+                    messages.append(msg)
+                    return (1, messages)
+            else:
+                msg = f"Checksums file not found: {checksums_path}"
+                messages.append(msg)
+                return (1, messages)
+        else:
+            msg = f"OK: {artifact.name} exists"
+            messages.append(msg)
+
+    return (0, messages)
+
+def _main_cli() -> Tuple[int, List[str]]:
+    """Original CLI mode for downloading and verifying from GitHub."""
+    if not GITHUB_TOKEN:
+        print("❌ Missing GITHUB_TOKEN environment variable.")
+        sys.exit(1)
+
     if not CHECKSUM_FILE.exists():
         print(f"❌ Missing checksum file: {CHECKSUM_FILE}")
         sys.exit(1)
@@ -88,6 +154,7 @@ def main():
         sys.exit(1)
 
     print("\n🎉 All assets verified successfully!")
+    return (0, [])
 
 if __name__ == "__main__":
     main()
