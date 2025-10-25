@@ -16,7 +16,9 @@ import numpy as np
 try:
     from tqdm import tqdm
 except Exception:  # pragma: no cover - fallback when tqdm missing
-    tqdm = lambda x, **_: x  # type: ignore
+
+    def tqdm(x, **_):  # type: ignore
+        return x
 
 try:
     from watermark_remover.core.inpaint_lama import inpaint_lama as lama_run
@@ -61,7 +63,10 @@ def _frame_seed(base: int, idx: int) -> int:
 
 def _remux_with_ffmpeg(src_mp4: str, dst_mp4: str) -> None:
     """Remux video with ffmpeg to preserve color metadata."""
-    cmd = f'ffmpeg -y -i "{src_mp4}" -c:v libx264 -crf 16 -preset medium -pix_fmt yuv420p -movflags +faststart "{dst_mp4}"'
+    cmd = (
+        f'ffmpeg -y -i "{src_mp4}" -c:v libx264 -crf 16 -preset medium '
+        f'-pix_fmt yuv420p -movflags +faststart "{dst_mp4}"'
+    )
     subprocess.run(shlex.split(cmd), check=True)
 
 
@@ -149,6 +154,129 @@ def process_image(
     _imwrite(path_out, result)
 
 
+def _read_video_frames(path_in: Path) -> tuple[list[np.ndarray], int, int, float]:
+    """Read video and return frames, width, height, fps."""
+    cap = cv2.VideoCapture(str(path_in))
+    if not cap.isOpened():
+        raise FileNotFoundError(path_in)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+
+    frames = []
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        frames.append(frame)
+    cap.release()
+    return frames, width, height, fps
+
+
+def _generate_masks(frames: list[np.ndarray], mask_mode: str, dilate: int) -> list[np.ndarray]:
+    """Generate masks for all frames."""
+    masks = []
+    for i, frame in enumerate(frames):
+        if mask_mode == "auto":
+            mask = _auto_mask_bottom_right(frame, dilate=dilate)
+        else:
+            mask = _auto_mask_bottom_right(frame, dilate=dilate)
+        masks.append(mask)
+        # Optional mask dumping
+        if os.environ.get("WMR_DUMP_MASKS") == "1":
+            Path("out/masks").mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(f"out/masks/{i:06d}.png", mask)
+    return masks
+
+
+def _process_frame_with_qc(
+    frames: list[np.ndarray],
+    masks: list[np.ndarray],
+    idx: int,
+    start: int,
+    prev_clean: np.ndarray | None,
+    method: Method,
+    seed: int,
+    dilate: int,
+    retry: int,
+    thr: dict | None,
+) -> np.ndarray:
+    """Process a single frame with QC and retry logic."""
+    seed_i = _frame_seed(seed, idx)
+    cleaned = _inpaint(frames[idx], masks[idx], method, seed_i)
+
+    # QC + retry (skip first frame in a chunk and when QC disabled)
+    if thr is not None and _QC_AVAILABLE and qc_pass and idx > start and prev_clean is not None:
+        ok = qc_pass(frames[idx - 1], frames[idx], masks[idx], prev_clean, cleaned, thr=thr)
+        tries = 0
+        while not ok and tries < retry:
+            bigger = min(11, dilate + 2 + tries)
+            k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (bigger, bigger))
+            retry_mask = cv2.dilate(masks[idx], k)
+            retry_seed = _frame_seed(seed, idx) ^ (0x9E3779B1 * (tries + 1))
+            cleaned = _inpaint(frames[idx], retry_mask, method, retry_seed)
+            ok = qc_pass(
+                frames[idx - 1], frames[idx], retry_mask, prev_clean, cleaned, thr=thr
+            )
+            tries += 1
+    return cleaned
+
+
+def _process_chunk(
+    frames: list[np.ndarray],
+    masks: list[np.ndarray],
+    start: int,
+    end: int,
+    method: Method,
+    seed: int,
+    dilate: int,
+    retry: int,
+    thr: dict | None,
+) -> list[np.ndarray]:
+    """Process a single chunk of frames."""
+    current_clean = []
+    prev_clean = None
+
+    for idx in range(start, end + 1):
+        cleaned = _process_frame_with_qc(
+            frames, masks, idx, start, prev_clean, method, seed, dilate, retry, thr
+        )
+        current_clean.append(cleaned)
+        prev_clean = cleaned
+    return current_clean
+
+
+def _write_chunk_frames(
+    writer: cv2.VideoWriter,
+    chunk_index: int,
+    current_clean: list[np.ndarray],
+    prev_chunk_clean: list[np.ndarray] | None,
+    start: int,
+    end: int,
+    overlap: int,
+    frames: list[np.ndarray],
+    flow_estimator: FlowEstimator,
+) -> None:
+    """Write chunk frames with blending for overlaps."""
+    if chunk_index == 0:
+        last_keep = end - overlap
+        for frame in current_clean[: max(0, last_keep - start + 1)]:
+            writer.write(frame)
+    else:
+        for j in range(overlap):
+            prev_idx = len(prev_chunk_clean) - overlap + j
+            prev_frame = prev_chunk_clean[prev_idx]
+            curr_frame = current_clean[j]
+            flow = flow_estimator.flow(frames[start - overlap + j], frames[start + j])
+            alpha = 1.0 - (j / max(1, overlap - 1))
+            blended = blend_overlap(prev_frame, curr_frame, flow, alpha)
+            writer.write(blended)
+        mid_start = overlap
+        mid_end = (end - start + 1) - overlap
+        for frame in current_clean[mid_start:mid_end]:
+            writer.write(frame)
+
+
 def process_video(
     path_in: Path,
     path_out: Path,
@@ -162,90 +290,46 @@ def process_video(
     qc: str = "warped_ssim>=0.92",
     retry: int = 1,
 ) -> None:
-    cap = cv2.VideoCapture(str(path_in))
-    if not cap.isOpened():
-        raise FileNotFoundError(path_in)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 0
+    # Read video frames
+    frames, width, height, fps = _read_video_frames(path_in)
 
-    frames = []
-    while True:
-        ok, frame = cap.read()
-        if not ok:
-            break
-        frames.append(frame)
-    cap.release()
+    # Generate masks
+    masks = _generate_masks(frames, mask_mode, dilate)
 
-    if total == 0:
-        total = len(frames)
-
-    # Use temporary output for ffmpeg remux
+    # Setup output writer
     tmp_out = str(Path(path_out).with_suffix(".tmp.mp4"))
-    writer = cv2.VideoWriter(tmp_out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
-
-    # Generate masks and optionally dump them
-    masks = []
-    for i, frame in enumerate(frames):
-        mask = _auto_mask_bottom_right(frame, dilate=dilate) if mask_mode == "auto" else _auto_mask_bottom_right(frame, dilate=dilate)
-        masks.append(mask)
-        # Optional mask dumping
-        if os.environ.get("WMR_DUMP_MASKS") == "1":
-            Path("out/masks").mkdir(parents=True, exist_ok=True)
-            cv2.imwrite(f"out/masks/{i:06d}.png", mask)
+    writer = cv2.VideoWriter(
+        tmp_out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
+    )
 
     # Parse QC threshold
     thr = parse_qc(qc) if _QC_AVAILABLE and parse_qc else None
 
+    # Process chunks
     flow_estimator = FlowEstimator()
     chunks = make_chunks(len(frames), window, overlap)
     prev_chunk_clean = None
 
     for chunk_index, (start, end) in enumerate(tqdm(chunks, desc="wmr-video")):
-        current_clean = []
-        prev_clean = None
+        current_clean = _process_chunk(
+            frames, masks, start, end, method, seed, dilate, retry, thr
+        )
 
-        for idx in range(start, end + 1):
-            # Use deterministic per-frame seed
-            seed_i = _frame_seed(seed, idx)
-            cleaned = _inpaint(frames[idx], masks[idx], method, seed_i)
-
-            # QC + retry (skip first frame in a chunk and when QC disabled)
-            if thr is not None and _QC_AVAILABLE and qc_pass and idx > start and prev_clean is not None:
-                ok = qc_pass(frames[idx - 1], frames[idx], masks[idx], prev_clean, cleaned, thr=thr)
-                tries = 0
-                while not ok and tries < retry:
-                    bigger = min(11, dilate + 2 + tries)
-                    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (bigger, bigger))
-                    retry_mask = cv2.dilate(masks[idx], k)
-                    cleaned = _inpaint(frames[idx], retry_mask, method, _frame_seed(seed, idx) ^ (0x9E3779B1 * (tries + 1)))
-                    ok = qc_pass(frames[idx - 1], frames[idx], retry_mask, prev_clean, cleaned, thr=thr)
-                    tries += 1
-
-            current_clean.append(cleaned)
-            prev_clean = cleaned
-
-        if chunk_index == 0:
-            last_keep = end - overlap
-            for frame in current_clean[: max(0, last_keep - start + 1)]:
-                writer.write(frame)
-        else:
-            for j in range(overlap):
-                prev_idx = len(prev_chunk_clean) - overlap + j
-                prev_frame = prev_chunk_clean[prev_idx]
-                curr_frame = current_clean[j]
-                flow = flow_estimator.flow(frames[start - overlap + j], frames[start + j])
-                alpha = 1.0 - (j / max(1, overlap - 1))
-                blended = blend_overlap(prev_frame, curr_frame, flow, alpha)
-                writer.write(blended)
-            mid_start = overlap
-            mid_end = (end - start + 1) - overlap
-            for frame in current_clean[mid_start:mid_end]:
-                writer.write(frame)
+        _write_chunk_frames(
+            writer,
+            chunk_index,
+            current_clean,
+            prev_chunk_clean,
+            start,
+            end,
+            overlap,
+            frames,
+            flow_estimator,
+        )
 
         prev_chunk_clean = current_clean
 
+    # Write tail frames
     if prev_chunk_clean is not None:
         tail = prev_chunk_clean[-overlap:] if overlap > 0 else prev_chunk_clean
         for frame in tail:
