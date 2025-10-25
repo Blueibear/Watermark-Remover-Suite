@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from backend import publish_release
+from watermark_remover.backend import publish_release
 
 
 class TestPublishRelease(unittest.TestCase):

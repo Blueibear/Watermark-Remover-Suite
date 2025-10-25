@@ -1,9 +1,9 @@
 """Core processing package for the Watermark Remover Suite."""
 
+from . import utils
+from .batch_manager import BatchItem, BatchResult, BatchWatermarkProcessor
 from .image_remover import ImageWatermarkRemover
 from .video_remover import VideoWatermarkRemover
-from .batch_manager import BatchItem, BatchResult, BatchWatermarkProcessor
-from . import utils
 
 __all__ = [
     "ImageWatermarkRemover",

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import shutil
 import subprocess
 import sys
-import hashlib
 from pathlib import Path
 
 # ✅ Real signtool signing setup

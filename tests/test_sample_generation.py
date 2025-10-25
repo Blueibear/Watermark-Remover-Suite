@@ -4,12 +4,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-
 from unittest import mock
 
-import backend.generate_samples as generate_samples
-import backend.run_benchmarks as run_benchmarks
-from backend.generate_samples import generate_images, generate_videos
+import watermark_remover.backend.run_benchmarks as run_benchmarks
+from watermark_remover.backend.generate_samples import generate_images, generate_videos
 
 
 class TestSampleGeneration(unittest.TestCase):
