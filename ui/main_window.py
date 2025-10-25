@@ -58,7 +58,9 @@ def _ensure_gui_log_handler() -> None:
     ]
     if not existing:
         file_handler = FileHandler(GUI_VALIDATION_LOG, encoding="utf-8")
-        file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s"))
+        file_handler.setFormatter(
+            logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+        )
         logger.addHandler(file_handler)
 
 
@@ -112,7 +114,9 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         self.config = load_config(config_path or DEFAULT_CONFIG_PATH)
         setup_logging(self.config.get("logging", {}), force=True)
         _ensure_gui_log_handler()
-        logger.info("MainWindow initialized with config from %s", config_path or DEFAULT_CONFIG_PATH)
+        logger.info(
+            "MainWindow initialized with config from %s", config_path or DEFAULT_CONFIG_PATH
+        )
 
         self.thread_pool = QThreadPool.globalInstance()
         self.image_remover = ImageWatermarkRemover.from_config(self.config)
@@ -159,15 +163,21 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         # Image inputs
         self.image_input = QLineEdit(self)
         image_browse = QPushButton("Browse...", self)
-        image_browse.clicked.connect(lambda: self._browse_file(self.image_input, "Select Image", image=True))
+        image_browse.clicked.connect(
+            lambda: self._browse_file(self.image_input, "Select Image", image=True)
+        )
 
         self.image_output = QLineEdit(self)
         image_output_browse = QPushButton("Save As...", self)
-        image_output_browse.clicked.connect(lambda: self._browse_save(self.image_output, "Select Output Image", image=True))
+        image_output_browse.clicked.connect(
+            lambda: self._browse_save(self.image_output, "Select Output Image", image=True)
+        )
 
         self.image_mask = QLineEdit(self)
         image_mask_browse = QPushButton("Mask...", self)
-        image_mask_browse.clicked.connect(lambda: self._browse_file(self.image_mask, "Select Mask Image", image=True))
+        image_mask_browse.clicked.connect(
+            lambda: self._browse_file(self.image_mask, "Select Mask Image", image=True)
+        )
 
         self.image_process_btn = QPushButton("Process Image", self)
         self.image_process_btn.clicked.connect(self._on_process_image)
@@ -186,15 +196,21 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         # Video inputs
         self.video_input = QLineEdit(self)
         video_browse = QPushButton("Browse...", self)
-        video_browse.clicked.connect(lambda: self._browse_file(self.video_input, "Select Video", image=False))
+        video_browse.clicked.connect(
+            lambda: self._browse_file(self.video_input, "Select Video", image=False)
+        )
 
         self.video_output = QLineEdit(self)
         video_output_browse = QPushButton("Save As...", self)
-        video_output_browse.clicked.connect(lambda: self._browse_save(self.video_output, "Select Output Video", image=False))
+        video_output_browse.clicked.connect(
+            lambda: self._browse_save(self.video_output, "Select Output Video", image=False)
+        )
 
         self.video_mask = QLineEdit(self)
         video_mask_browse = QPushButton("Mask...", self)
-        video_mask_browse.clicked.connect(lambda: self._browse_file(self.video_mask, "Select Mask Image", image=True))
+        video_mask_browse.clicked.connect(
+            lambda: self._browse_file(self.video_mask, "Select Mask Image", image=True)
+        )
 
         self.video_process_btn = QPushButton("Process Video", self)
         self.video_process_btn.clicked.connect(self._on_process_video)
@@ -236,7 +252,11 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         return group
 
     def _browse_file(self, line_edit: QLineEdit, title: str, *, image: bool) -> None:
-        filters = "Image Files (*.png *.jpg *.jpeg *.bmp *.tiff)" if image else "Video Files (*.mp4 *.avi *.mov *.mkv)"
+        filters = (
+            "Image Files (*.png *.jpg *.jpeg *.bmp *.tiff)"
+            if image
+            else "Video Files (*.mp4 *.avi *.mov *.mkv)"
+        )
         path, _ = QFileDialog.getOpenFileName(self, title, "", filters)
         if path:
             line_edit.setText(path)
@@ -256,9 +276,7 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         self.log_console.append(message)
 
     def _set_status_help(self) -> None:
-        self.statusBar().showMessage(
-            "Need help? See docs/user_guide.md or press F1.", 5000
-        )
+        self.statusBar().showMessage("Need help? See docs/user_guide.md or press F1.", 5000)
 
     def _set_busy(self, busy: bool) -> None:
         self.image_process_btn.setDisabled(busy)
@@ -355,11 +373,15 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         super().resizeEvent(event)
         if self.before_label.pixmap():
             self.before_label.setPixmap(
-                self.before_label.pixmap().scaled(self.before_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.before_label.pixmap().scaled(
+                    self.before_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+                )
             )
         if self.after_label.pixmap():
             self.after_label.setPixmap(
-                self.after_label.pixmap().scaled(self.after_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                self.after_label.pixmap().scaled(
+                    self.after_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+                )
             )
 
     def closeEvent(self, event: QCloseEvent) -> None:  # type: ignore[override]
@@ -370,7 +392,9 @@ class MainWindow(QMainWindow):  # pragma: no cover - exercised via integration t
         super().closeEvent(event)
 
 
-def run_gui(config_path: Optional[Path] = None, *, show: bool = True, log_validation: bool = False) -> int:
+def run_gui(
+    config_path: Optional[Path] = None, *, show: bool = True, log_validation: bool = False
+) -> int:
     if not PYQT_AVAILABLE:
         raise RuntimeError("PyQt5 is required to run the GUI.")
 
@@ -400,8 +424,11 @@ if __name__ == "__main__":
     import sys
 
     parser = argparse.ArgumentParser(description="Watermark Remover Suite GUI Launcher")
-    parser.add_argument("--show", action="store_true",
-                        help="Launch the full GUI instead of running headless validation")
+    parser.add_argument(
+        "--show",
+        action="store_true",
+        help="Launch the full GUI instead of running headless validation",
+    )
     args = parser.parse_args()
 
     if args.show:

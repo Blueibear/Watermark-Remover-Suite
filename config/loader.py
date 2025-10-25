@@ -16,17 +16,15 @@ DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 def _merge_dicts(base: MutableMapping[str, Any], overrides: Mapping[str, Any]) -> None:
     """Recursively merge ``overrides`` into ``base`` in-place."""
     for key, value in overrides.items():
-        if (
-            key in base
-            and isinstance(base[key], MutableMapping)
-            and isinstance(value, Mapping)
-        ):
+        if key in base and isinstance(base[key], MutableMapping) and isinstance(value, Mapping):
             _merge_dicts(base[key], value)
         else:
             base[key] = copy.deepcopy(value)
 
 
-def load_config(path: Optional[PathLike] = None, *, overrides: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+def load_config(
+    path: Optional[PathLike] = None, *, overrides: Optional[Mapping[str, Any]] = None
+) -> Dict[str, Any]:
     """Load YAML configuration from disk and optionally apply overrides."""
     config_path = Path(path) if path else DEFAULT_CONFIG_PATH
     if not config_path.exists():

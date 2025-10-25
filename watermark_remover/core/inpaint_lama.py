@@ -19,7 +19,9 @@ class LaMaONNX:
 
     def __init__(self, onnx_path: Path, device: str = "auto"):
         if ort is None:
-            raise RuntimeError("onnxruntime is required for LaMa inference. Install onnxruntime-gpu or onnxruntime.")
+            raise RuntimeError(
+                "onnxruntime is required for LaMa inference. Install onnxruntime-gpu or onnxruntime."
+            )
         providers: list[object] = [
             ("CUDAExecutionProvider", {"arena_extend_strategy": "kNextPowerOfTwo"}),
             "CPUExecutionProvider",
@@ -83,6 +85,8 @@ class LaMaONNX:
         return np.clip(output, 0, 255).astype(np.uint8)
 
 
-def inpaint_lama(img_bgr: np.ndarray, mask_u8: np.ndarray, *, model_path: Path, device: str = "auto") -> np.ndarray:
+def inpaint_lama(
+    img_bgr: np.ndarray, mask_u8: np.ndarray, *, model_path: Path, device: str = "auto"
+) -> np.ndarray:
     runner = LaMaONNX(model_path, device=device)
     return runner.inpaint(img_bgr, mask_u8)

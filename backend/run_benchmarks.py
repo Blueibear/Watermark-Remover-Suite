@@ -22,7 +22,9 @@ from core.logger import setup_logging
 logger = logging.getLogger(__name__)
 
 
-def _benchmark_images(remover: ImageWatermarkRemover, images_dir: Path, output_dir: Path) -> List[Dict[str, object]]:
+def _benchmark_images(
+    remover: ImageWatermarkRemover, images_dir: Path, output_dir: Path
+) -> List[Dict[str, object]]:
     results: List[Dict[str, object]] = []
     output_dir.mkdir(parents=True, exist_ok=True)
     for watermarked_path in sorted(images_dir.glob("*_watermarked.png")):
@@ -31,7 +33,9 @@ def _benchmark_images(remover: ImageWatermarkRemover, images_dir: Path, output_d
         output_path = output_dir / f"{stem}_restored.png"
 
         start = time.perf_counter()
-        remover.process_file(watermarked_path, output_path, mask_path=mask_path if mask_path.exists() else None)
+        remover.process_file(
+            watermarked_path, output_path, mask_path=mask_path if mask_path.exists() else None
+        )
         elapsed = time.perf_counter() - start
         logger.info("Image %s processed in %.3fs", watermarked_path.name, elapsed)
         results.append(
@@ -46,7 +50,9 @@ def _benchmark_images(remover: ImageWatermarkRemover, images_dir: Path, output_d
     return results
 
 
-def _benchmark_videos(remover: VideoWatermarkRemover, videos_dir: Path, output_dir: Path) -> List[Dict[str, object]]:
+def _benchmark_videos(
+    remover: VideoWatermarkRemover, videos_dir: Path, output_dir: Path
+) -> List[Dict[str, object]]:
     results: List[Dict[str, object]] = []
     output_dir.mkdir(parents=True, exist_ok=True)
     for video_path in sorted(videos_dir.glob("*.mp4")):
@@ -68,12 +74,34 @@ def _benchmark_videos(remover: VideoWatermarkRemover, videos_dir: Path, output_d
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run sample benchmarks.")
-    parser.add_argument("--images", type=Path, default=Path("sample_inputs/images"), help="Directory containing sample images.")
-    parser.add_argument("--videos", type=Path, default=Path("sample_inputs/videos"), help="Directory containing sample videos.")
-    parser.add_argument("--output", type=Path, default=Path("benchmarks/results"), help="Directory to write results into.")
-    parser.add_argument("--config", type=Path, default=None, help="Optional config path for remover settings.")
+    parser.add_argument(
+        "--images",
+        type=Path,
+        default=Path("sample_inputs/images"),
+        help="Directory containing sample images.",
+    )
+    parser.add_argument(
+        "--videos",
+        type=Path,
+        default=Path("sample_inputs/videos"),
+        help="Directory containing sample videos.",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("benchmarks/results"),
+        help="Directory to write results into.",
+    )
+    parser.add_argument(
+        "--config", type=Path, default=None, help="Optional config path for remover settings."
+    )
     parser.add_argument("--log-level", default="INFO", help="Logging level.")
-    parser.add_argument("--videos-enabled", action=argparse.BooleanOptionalAction, default=True, help="Include video benchmarks.")
+    parser.add_argument(
+        "--videos-enabled",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include video benchmarks.",
+    )
     return parser.parse_args()
 
 
@@ -81,7 +109,10 @@ def main(args: Optional[argparse.Namespace] = None) -> Dict[str, List[Dict[str, 
     if args is None:
         args = parse_args()
 
-    logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO), format="%(levelname)s | %(message)s")
+    logging.basicConfig(
+        level=getattr(logging, args.log_level.upper(), logging.INFO),
+        format="%(levelname)s | %(message)s",
+    )
     setup_logging({"level": args.log_level.upper(), "console": {"enabled": True}}, force=True)
 
     results_dir = args.output
@@ -95,12 +126,16 @@ def main(args: Optional[argparse.Namespace] = None) -> Dict[str, List[Dict[str, 
 
     benchmark_data: Dict[str, List[Dict[str, object]]] = {"images": [], "videos": []}
     if images_dir.exists():
-        benchmark_data["images"] = _benchmark_images(image_remover, images_dir, results_dir / "images")
+        benchmark_data["images"] = _benchmark_images(
+            image_remover, images_dir, results_dir / "images"
+        )
     else:
         logger.warning("Images directory %s not found.", images_dir)
 
     if args.videos_enabled and videos_dir.exists():
-        benchmark_data["videos"] = _benchmark_videos(video_remover, videos_dir, results_dir / "videos")
+        benchmark_data["videos"] = _benchmark_videos(
+            video_remover, videos_dir, results_dir / "videos"
+        )
     elif args.videos_enabled:
         logger.warning("Videos directory %s not found; skipping video benchmarks.", videos_dir)
 

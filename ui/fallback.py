@@ -38,7 +38,9 @@ class FallbackApp:
         setup_logging(self.config.get("logging", {}), force=True)
 
         self.image_remover = ImageWatermarkRemover.from_config(self.config)
-        self.video_remover = VideoWatermarkRemover.from_config(self.config, image_remover=self.image_remover)
+        self.video_remover = VideoWatermarkRemover.from_config(
+            self.config, image_remover=self.image_remover
+        )
 
         self._create_widgets()
         self._lock_ui(False)
@@ -70,18 +72,34 @@ class FallbackApp:
 
         ttk.Label(self.image_frame, text="Input Image").grid(row=0, column=0, sticky="w", **padding)
         self.image_input_var = tk.StringVar()
-        ttk.Entry(self.image_frame, textvariable=self.image_input_var, width=45).grid(row=0, column=1, **padding)
-        ttk.Button(self.image_frame, text="Browse", command=self._browse_image_input).grid(row=0, column=2, **padding)
+        ttk.Entry(self.image_frame, textvariable=self.image_input_var, width=45).grid(
+            row=0, column=1, **padding
+        )
+        ttk.Button(self.image_frame, text="Browse", command=self._browse_image_input).grid(
+            row=0, column=2, **padding
+        )
 
-        ttk.Label(self.image_frame, text="Output Image").grid(row=1, column=0, sticky="w", **padding)
+        ttk.Label(self.image_frame, text="Output Image").grid(
+            row=1, column=0, sticky="w", **padding
+        )
         self.image_output_var = tk.StringVar()
-        ttk.Entry(self.image_frame, textvariable=self.image_output_var, width=45).grid(row=1, column=1, **padding)
-        ttk.Button(self.image_frame, text="Save As", command=self._browse_image_output).grid(row=1, column=2, **padding)
+        ttk.Entry(self.image_frame, textvariable=self.image_output_var, width=45).grid(
+            row=1, column=1, **padding
+        )
+        ttk.Button(self.image_frame, text="Save As", command=self._browse_image_output).grid(
+            row=1, column=2, **padding
+        )
 
-        ttk.Label(self.image_frame, text="Mask (optional)").grid(row=2, column=0, sticky="w", **padding)
+        ttk.Label(self.image_frame, text="Mask (optional)").grid(
+            row=2, column=0, sticky="w", **padding
+        )
         self.image_mask_var = tk.StringVar()
-        ttk.Entry(self.image_frame, textvariable=self.image_mask_var, width=45).grid(row=2, column=1, **padding)
-        ttk.Button(self.image_frame, text="Browse", command=self._browse_image_mask).grid(row=2, column=2, **padding)
+        ttk.Entry(self.image_frame, textvariable=self.image_mask_var, width=45).grid(
+            row=2, column=1, **padding
+        )
+        ttk.Button(self.image_frame, text="Browse", command=self._browse_image_mask).grid(
+            row=2, column=2, **padding
+        )
 
         self.image_progress = ttk.Progressbar(self.image_frame, mode="determinate", maximum=100)
         self.image_progress.grid(row=3, column=0, columnspan=3, sticky="ew", **padding)
@@ -95,18 +113,34 @@ class FallbackApp:
 
         ttk.Label(self.video_frame, text="Input Video").grid(row=0, column=0, sticky="w", **padding)
         self.video_input_var = tk.StringVar()
-        ttk.Entry(self.video_frame, textvariable=self.video_input_var, width=45).grid(row=0, column=1, **padding)
-        ttk.Button(self.video_frame, text="Browse", command=self._browse_video_input).grid(row=0, column=2, **padding)
+        ttk.Entry(self.video_frame, textvariable=self.video_input_var, width=45).grid(
+            row=0, column=1, **padding
+        )
+        ttk.Button(self.video_frame, text="Browse", command=self._browse_video_input).grid(
+            row=0, column=2, **padding
+        )
 
-        ttk.Label(self.video_frame, text="Output Video").grid(row=1, column=0, sticky="w", **padding)
+        ttk.Label(self.video_frame, text="Output Video").grid(
+            row=1, column=0, sticky="w", **padding
+        )
         self.video_output_var = tk.StringVar()
-        ttk.Entry(self.video_frame, textvariable=self.video_output_var, width=45).grid(row=1, column=1, **padding)
-        ttk.Button(self.video_frame, text="Save As", command=self._browse_video_output).grid(row=1, column=2, **padding)
+        ttk.Entry(self.video_frame, textvariable=self.video_output_var, width=45).grid(
+            row=1, column=1, **padding
+        )
+        ttk.Button(self.video_frame, text="Save As", command=self._browse_video_output).grid(
+            row=1, column=2, **padding
+        )
 
-        ttk.Label(self.video_frame, text="Mask (optional)").grid(row=2, column=0, sticky="w", **padding)
+        ttk.Label(self.video_frame, text="Mask (optional)").grid(
+            row=2, column=0, sticky="w", **padding
+        )
         self.video_mask_var = tk.StringVar()
-        ttk.Entry(self.video_frame, textvariable=self.video_mask_var, width=45).grid(row=2, column=1, **padding)
-        ttk.Button(self.video_frame, text="Browse", command=self._browse_video_mask).grid(row=2, column=2, **padding)
+        ttk.Entry(self.video_frame, textvariable=self.video_mask_var, width=45).grid(
+            row=2, column=1, **padding
+        )
+        ttk.Button(self.video_frame, text="Browse", command=self._browse_video_mask).grid(
+            row=2, column=2, **padding
+        )
 
         self.video_progress = ttk.Progressbar(self.video_frame, mode="determinate", maximum=100)
         self.video_progress.grid(row=3, column=0, columnspan=3, sticky="ew", **padding)
@@ -117,32 +151,44 @@ class FallbackApp:
 
     # Browsers ------------------------------------------------------------------------
     def _browse_image_input(self) -> None:
-        path = filedialog.askopenfilename(title="Select Image", filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")])
+        path = filedialog.askopenfilename(
+            title="Select Image", filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")]
+        )
         if path:
             self.image_input_var.set(path)
 
     def _browse_image_output(self) -> None:
-        path = filedialog.asksaveasfilename(title="Save Image", defaultextension=".png", filetypes=[("PNG", "*.png")])
+        path = filedialog.asksaveasfilename(
+            title="Save Image", defaultextension=".png", filetypes=[("PNG", "*.png")]
+        )
         if path:
             self.image_output_var.set(path)
 
     def _browse_image_mask(self) -> None:
-        path = filedialog.askopenfilename(title="Select Mask", filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")])
+        path = filedialog.askopenfilename(
+            title="Select Mask", filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")]
+        )
         if path:
             self.image_mask_var.set(path)
 
     def _browse_video_input(self) -> None:
-        path = filedialog.askopenfilename(title="Select Video", filetypes=[("Videos", "*.mp4;*.mov;*.avi;*.mkv")])
+        path = filedialog.askopenfilename(
+            title="Select Video", filetypes=[("Videos", "*.mp4;*.mov;*.avi;*.mkv")]
+        )
         if path:
             self.video_input_var.set(path)
 
     def _browse_video_output(self) -> None:
-        path = filedialog.asksaveasfilename(title="Save Video", defaultextension=".mp4", filetypes=[("MP4", "*.mp4")])
+        path = filedialog.asksaveasfilename(
+            title="Save Video", defaultextension=".mp4", filetypes=[("MP4", "*.mp4")]
+        )
         if path:
             self.video_output_var.set(path)
 
     def _browse_video_mask(self) -> None:
-        path = filedialog.askopenfilename(title="Select Mask", filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")])
+        path = filedialog.askopenfilename(
+            title="Select Mask", filetypes=[("Images", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")]
+        )
         if path:
             self.video_mask_var.set(path)
 
@@ -171,7 +217,11 @@ class FallbackApp:
         if not input_path.exists():
             messagebox.showwarning("Invalid Input", "Please choose a valid image file.")
             return
-        output_path = Path(self.image_output_var.get()) if self.image_output_var.get() else input_path.with_name(f"{input_path.stem}_restored{input_path.suffix}")
+        output_path = (
+            Path(self.image_output_var.get())
+            if self.image_output_var.get()
+            else input_path.with_name(f"{input_path.stem}_restored{input_path.suffix}")
+        )
         self.image_output_var.set(str(output_path))
         mask_path = Path(self.image_mask_var.get()) if self.image_mask_var.get() else None
 
@@ -193,7 +243,11 @@ class FallbackApp:
         if not input_path.exists():
             messagebox.showwarning("Invalid Input", "Please choose a valid video file.")
             return
-        output_path = Path(self.video_output_var.get()) if self.video_output_var.get() else input_path.with_name(f"{input_path.stem}_restored.mp4")
+        output_path = (
+            Path(self.video_output_var.get())
+            if self.video_output_var.get()
+            else input_path.with_name(f"{input_path.stem}_restored.mp4")
+        )
         self.video_output_var.set(str(output_path))
         mask_path = Path(self.video_mask_var.get()) if self.video_mask_var.get() else None
 

@@ -19,6 +19,7 @@ except Exception:  # pragma: no cover - fallback when tqdm missing
     def tqdm(x, **_):  # type: ignore
         return x
 
+
 try:
     from watermark_remover.core.inpaint_lama import inpaint_lama as lama_run
 
@@ -215,9 +216,7 @@ def _process_frame_with_qc(
             retry_mask = cv2.dilate(masks[idx], k)
             retry_seed = _frame_seed(seed, idx) ^ (0x9E3779B1 * (tries + 1))
             cleaned = _inpaint(frames[idx], retry_mask, method, retry_seed)
-            ok = qc_pass(
-                frames[idx - 1], frames[idx], retry_mask, prev_clean, cleaned, thr=thr
-            )
+            ok = qc_pass(frames[idx - 1], frames[idx], retry_mask, prev_clean, cleaned, thr=thr)
             tries += 1
     return cleaned
 
@@ -298,9 +297,7 @@ def process_video(
 
     # Setup output writer
     tmp_out = str(Path(path_out).with_suffix(".tmp.mp4"))
-    writer = cv2.VideoWriter(
-        tmp_out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
-    )
+    writer = cv2.VideoWriter(tmp_out, cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
 
     # Parse QC threshold
     thr = parse_qc(qc) if _QC_AVAILABLE and parse_qc else None
@@ -311,9 +308,7 @@ def process_video(
     prev_chunk_clean = None
 
     for chunk_index, (start, end) in enumerate(tqdm(chunks, desc="wmr-video")):
-        current_clean = _process_chunk(
-            frames, masks, start, end, method, seed, dilate, retry, thr
-        )
+        current_clean = _process_chunk(frames, masks, start, end, method, seed, dilate, retry, thr)
 
         _write_chunk_frames(
             writer,
