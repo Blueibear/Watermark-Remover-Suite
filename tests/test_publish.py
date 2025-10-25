@@ -4,10 +4,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
 from backend import publish_release
 
 
 class TestPublishRelease(unittest.TestCase):
+    @pytest.mark.integration
     def test_publish_creates_confirmation_and_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)
