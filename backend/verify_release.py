@@ -22,8 +22,8 @@ API_BASE = "https://api.github.com"
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
-# Alias for test compatibility
 def _hash_file(path: Path) -> str:
+    """Alias for tests."""
     return sha256(path)
 
 def load_checksums(path: Path) -> dict:
@@ -71,48 +71,41 @@ def verify_local(args: argparse.Namespace) -> Tuple[int, List[str]]:
     """Test mode: Verify provided artifacts against checksums."""
     messages = []
 
-    if hasattr(args, "log") and args.log:
+    if args.log:
         log_path = Path(args.log)
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.touch()
 
-    if not hasattr(args, "artifacts") or not args.artifacts:
-        msg = "No artifacts specified"
-        messages.append(msg)
+    if not args.artifacts:
+        messages.append("No artifacts specified")
         return (1, messages)
 
     for artifact_path in args.artifacts:
         artifact = Path(artifact_path)
         if not artifact.exists():
-            msg = f"Missing artifact: {artifact.name}"
-            messages.append(msg)
+            messages.append(f"Missing artifact: {artifact.name}")
             return (1, messages)
 
-        if hasattr(args, "checksums") and args.checksums:
+        if args.checksums:
             checksums_path = Path(args.checksums)
-            if checksums_path.exists():
-                expected = load_checksums(checksums_path)
-                actual_hash = sha256(artifact)
-                expected_hash = expected.get(artifact.name, "")
-                if actual_hash.lower() == expected_hash.lower():
-                    msg = f"✅ OK: {artifact.name}"
-                    messages.append(msg)
-                else:
-                    msg = f"❌ MISMATCH: {artifact.name}"
-                    messages.append(msg)
-                    return (1, messages)
+            if not checksums_path.exists():
+                messages.append(f"Checksums file not found: {checksums_path}")
+                return (1, messages)
+
+            expected = load_checksums(checksums_path)
+            actual_hash = sha256(artifact)
+            expected_hash = expected.get(artifact.name, "")
+            if actual_hash.lower() == expected_hash.lower():
+                messages.append(f"✅ OK: {artifact.name}")
             else:
-                msg = f"Checksums file not found: {checksums_path}"
-                messages.append(msg)
+                messages.append(f"❌ MISMATCH: {artifact.name}")
                 return (1, messages)
         else:
-            msg = f"✅ OK: {artifact.name} exists"
-            messages.append(msg)
+            messages.append(f"✅ OK: {artifact.name} exists")
 
     return (0, messages)
 
 def main(args: argparse.Namespace = None) -> Tuple[int, List[str]]:
-    """Main entrypoint for CLI and default mode."""
     if args is not None:
         return verify_local(args)
 

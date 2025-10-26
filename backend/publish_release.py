@@ -14,6 +14,7 @@ from git import GitCommandError, Repo
 
 
 
+
 def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Real GitHub release publisher.")
     parser.add_argument(
