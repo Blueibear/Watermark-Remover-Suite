@@ -11,13 +11,20 @@ import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 
-try:
-    import lpips  # type: ignore
+# Lazy-load LPIPS to avoid heavy work at import time
+_LPIPS_MODEL = None
 
-    _LPIPS_MODEL = lpips.LPIPS(net="alex")
-except Exception:  # pragma: no cover - optional dependency
-    lpips = None  # type: ignore
-    _LPIPS_MODEL = None
+
+def _get_lpips():
+    """Lazy-load LPIPS model on first use."""
+    global _LPIPS_MODEL
+    if _LPIPS_MODEL is None:
+        try:
+            import lpips  # type: ignore
+            _LPIPS_MODEL = lpips.LPIPS(net="alex")
+        except Exception:  # pragma: no cover - optional dependency
+            _LPIPS_MODEL = False  # Mark as unavailable
+    return _LPIPS_MODEL if _LPIPS_MODEL is not False else None
 
 
 def _to_gray(img: np.ndarray) -> np.ndarray:
@@ -88,11 +95,12 @@ def masked_ssim_warped(prev_orig: np.ndarray, curr_orig: np.ndarray, mask: np.nd
 
 
 def lpips_metric(reference: np.ndarray, candidate: np.ndarray) -> Optional[float]:
-    if _LPIPS_MODEL is None:
+    model = _get_lpips()
+    if model is None:
         return None
     ref_tensor = _tensor_from_image(reference)
     cand_tensor = _tensor_from_image(candidate)
-    score = _LPIPS_MODEL(ref_tensor, cand_tensor)
+    score = model(ref_tensor, cand_tensor)
     return float(score.detach().cpu().numpy())
 
 
