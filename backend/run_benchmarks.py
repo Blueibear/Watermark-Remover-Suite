@@ -9,15 +9,10 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import sys
+from watermark_remover.config import load_config
+from watermark_remover.core.logger import setup_logging
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
-from config import load_config
-from core import ImageWatermarkRemover, VideoWatermarkRemover
-from core.logger import setup_logging
+from watermark_remover.core import ImageWatermarkRemover, VideoWatermarkRemover
 
 logger = logging.getLogger(__name__)
 

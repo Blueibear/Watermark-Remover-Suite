@@ -18,7 +18,17 @@ def _remove_handlers(handlers: Iterable[Handler]) -> None:
 
 
 def _resolve_log_path(filename: str) -> Path:
-    expanded = Path(os.path.expandvars(filename)).expanduser()
+    # Support both Windows (%VAR%) and Unix ($VAR) style env vars
+    import re
+    def expand_windows_style(text: str) -> str:
+        """Expand %VAR% style environment variables."""
+        def replacer(match):
+            var_name = match.group(1)
+            return os.environ.get(var_name, match.group(0))
+        return re.sub(r'%([^%]+)%', replacer, text)
+
+    expanded_filename = expand_windows_style(filename)
+    expanded = Path(os.path.expandvars(expanded_filename)).expanduser()
     try:
         expanded.parent.mkdir(parents=True, exist_ok=True)
         return expanded

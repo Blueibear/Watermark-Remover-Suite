@@ -7,9 +7,10 @@ import threading
 from pathlib import Path
 from typing import Optional
 
-from config import DEFAULT_CONFIG_PATH, load_config
-from core import ImageWatermarkRemover, VideoWatermarkRemover
-from core.logger import setup_logging
+from watermark_remover.config import DEFAULT_CONFIG_PATH, load_config
+from watermark_remover.core.logger import setup_logging
+
+from watermark_remover.core import ImageWatermarkRemover, VideoWatermarkRemover
 
 try:
     import tkinter as tk

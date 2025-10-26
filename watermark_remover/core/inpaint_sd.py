@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Optional
 
 import cv2
 import numpy as np
 
 try:
-    from diffusers import StableDiffusionInpaintPipeline
     import torch
+    from diffusers import StableDiffusionInpaintPipeline
     from PIL import Image
 
     _DIFFUSERS_AVAILABLE = True

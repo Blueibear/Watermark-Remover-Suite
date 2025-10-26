@@ -1,4 +1,4 @@
-.PHONY: setup dev install download-models verify-sample bench test format lint clean
+.PHONY: setup dev install download-models verify-sample bench test test-cov test-cov-html format lint clean
 
 VENV := .venv
 PY := $(VENV)/bin/python
@@ -20,7 +20,14 @@ lint:
 	$(VENV)/bin/ruff check .
 
 test:
-	$(VENV)/bin/pytest -q
+	$(VENV)/bin/pytest -v
+
+test-cov:
+	$(VENV)/bin/pytest --cov --cov-report=term-missing --cov-report=xml
+
+test-cov-html:
+	$(VENV)/bin/pytest --cov --cov-report=html
+	@echo "Coverage report generated in htmlcov/index.html"
 
 download-models:
 	$(PY) -m watermark_remover.models.download_models --all
@@ -33,4 +40,4 @@ bench:
 	wmr bench samples/videos/demo.mp4 --report out/bench.json || true
 
 clean:
-	rm -rf $(VENV) .pytest_cache .ruff_cache build dist *.egg-info out/**
+	rm -rf $(VENV) .pytest_cache .ruff_cache build dist *.egg-info out/** htmlcov .coverage coverage.xml
