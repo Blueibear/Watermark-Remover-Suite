@@ -11,17 +11,41 @@ A powerful toolkit for removing watermarks from images and videos while preservi
 
 ## Quickstart (CPU-only)
 
-Get started in seconds with CPU-only inpainting (no GPU required):
+Get started in seconds with CPU-based watermark removal:
 
 ```bash
+# Install the package in editable mode
 pip install -e .
-wmr image tests/fixtures/tiny.png --out out.png --method telea
 ```
 
-For video processing:
+### Image Example (real image)
+
 ```bash
-wmr video tests/fixtures/tiny.mp4 --out out.mp4 --method telea
+# Remove watermark from an image using Telea inpainting (CPU)
+wmr image --input photo.jpg --output clean.jpg --inpaint-method telea
 ```
+
+### Image Example (test fixture)
+
+```bash
+# Use a built-in test image
+wmr image tests/fixtures/tiny.png --output out.png --inpaint-method telea
+```
+
+### Video Example
+
+```bash
+wmr video tests/fixtures/tiny.mp4 --output out.mp4 --inpaint-method telea
+```
+
+### Create a synthetic image
+
+```bash
+python -c "import cv2; import numpy as np; img = np.zeros((100,160,3), np.uint8); cv2.putText(img, 'WM', (10,80), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (255,255,255), 4); cv2.imwrite('test.png', img)"
+wmr image --input test.png --output clean.png --inpaint-method telea
+```
+
+For GPU-accelerated methods (e.g. **LaMa**, **Stable Diffusion**), see [Optional Features](#optional-features).
 
 ---
 
@@ -327,5 +351,7 @@ See [LICENSE](LICENSE) for full licensing information.
 ---
 
 ## Support
+
+For questions, bug reports, or feature requests, please use [GitHub Issues](https://github.com/Blueibear/Watermark-Remover-Suite/issues).
 
 For issues, questions, or contributions, please visit the project repository or check the documentation in the `docs/` folder.

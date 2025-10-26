@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import pytest
 import watermark_remover.backend.run_benchmarks as run_benchmarks
 from watermark_remover.backend.generate_samples import generate_images, generate_videos
 
@@ -20,6 +21,7 @@ class TestSampleGeneration(unittest.TestCase):
                 self.assertTrue(watermarked.exists())
                 self.assertTrue(mask.exists())
 
+    @pytest.mark.integration
     def test_generate_videos_creates_expected_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             output_dir = Path(tmp_dir_name) / "videos"
@@ -86,6 +88,7 @@ class TestSampleGeneration(unittest.TestCase):
             bench_summary = bench_args.output / "summary.json"
             self.assertTrue(bench_summary.exists())
 
+    @pytest.mark.integration
     def test_run_benchmarks_with_videos(self) -> None:
         root = Path(__file__).resolve().parents[1]
         sample_videos = root / "sample_inputs" / "videos"

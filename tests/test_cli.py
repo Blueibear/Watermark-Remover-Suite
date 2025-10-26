@@ -72,6 +72,8 @@ class TestCLI(unittest.TestCase):
                     str(output_path),
                     "--bitrate",
                     "500k",
+                    "--inpaint-method",
+                    "telea",
                 ]
             )
 
