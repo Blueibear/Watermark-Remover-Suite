@@ -5,10 +5,11 @@ from pathlib import Path
 
 import cv2
 import yaml
+from watermark_remover.config import DEFAULT_CONFIG_PATH
 
-from cli import main as cli_main
-from config import DEFAULT_CONFIG_PATH
-from core import utils
+from watermark_remover.cli import main as cli_main
+from watermark_remover.core import utils
+
 from .helpers import create_synthetic_sample, create_test_video_clip
 
 

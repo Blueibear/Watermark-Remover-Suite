@@ -5,7 +5,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from core import utils
+from watermark_remover.core import utils
 
 
 class TestUtils(unittest.TestCase):

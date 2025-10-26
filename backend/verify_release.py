@@ -1,8 +1,9 @@
+import hashlib
 import os
 import sys
-import hashlib
-import requests
 from pathlib import Path
+
+import requests
 
 # === CONFIG ===
 REPO = "Blueibear/Watermark-Remover-Suite"

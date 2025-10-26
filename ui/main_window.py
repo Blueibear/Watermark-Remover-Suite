@@ -7,13 +7,14 @@ from logging import FileHandler
 from pathlib import Path
 from typing import Any, Callable, Optional, Tuple
 
-from config import DEFAULT_CONFIG_PATH, load_config
-from core import (
+from watermark_remover.config import DEFAULT_CONFIG_PATH, load_config
+from watermark_remover.core.logger import setup_logging
+
+from watermark_remover.core import (
     BatchWatermarkProcessor,
     ImageWatermarkRemover,
     VideoWatermarkRemover,
 )
-from core.logger import setup_logging
 
 try:
     from PyQt5.QtCore import QObject, QRunnable, Qt, QThreadPool, pyqtSignal
@@ -28,8 +29,8 @@ try:
         QLineEdit,
         QMainWindow,
         QMessageBox,
-        QPushButton,
         QProgressBar,
+        QPushButton,
         QSizePolicy,
         QStatusBar,
         QTextEdit,

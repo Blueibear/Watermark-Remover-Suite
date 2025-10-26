@@ -1,10 +1,8 @@
-import os
-import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
-from backend import sign_release
+from watermark_remover.backend import sign_release
 
 
 class TestSigningPlaceholder(unittest.TestCase):
