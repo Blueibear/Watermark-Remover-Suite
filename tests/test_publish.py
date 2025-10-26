@@ -4,10 +4,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from backend import publish_release
+import pytest
+from watermark_remover.backend import publish_release
 
 
 class TestPublishRelease(unittest.TestCase):
+    @pytest.mark.integration
     def test_publish_creates_confirmation_and_log(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)
@@ -35,14 +37,19 @@ class TestPublishRelease(unittest.TestCase):
                     str(log_file),
                 ]
             )
+
+            # Provide dummy GitHub token
             os.environ["GITHUB_TOKEN"] = "dummy-token"
+
+            # Run the mock release function
             publish_release.main(args)
 
-            self.assertTrue(output.exists())
+            # Assertions
+            self.assertTrue(output.exists(), "Release JSON file not created")
             data = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(data["tag"], "v0.0.1")
             self.assertIn("artifact1.zip", data["artifacts"])
-            self.assertTrue(log_file.exists())
+            self.assertTrue(log_file.exists(), "Log file not created")
             log_content = log_file.read_text(encoding="utf-8")
             self.assertIn("Mock release", log_content)
             self.assertIn("***", log_content)
@@ -50,3 +57,4 @@ class TestPublishRelease(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

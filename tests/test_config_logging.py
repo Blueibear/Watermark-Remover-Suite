@@ -4,11 +4,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from config import load_config
-from core.batch_manager import BatchWatermarkProcessor
-from core.image_remover import ImageWatermarkRemover
-from core.logger import setup_logging
-from core.video_remover import VideoWatermarkRemover
+from watermark_remover.config import load_config
+from watermark_remover.core.batch_manager import BatchWatermarkProcessor
+from watermark_remover.core.image_remover import ImageWatermarkRemover
+from watermark_remover.core.logger import setup_logging
+from watermark_remover.core.video_remover import VideoWatermarkRemover
 
 
 class TestConfigurationAndLogging(unittest.TestCase):

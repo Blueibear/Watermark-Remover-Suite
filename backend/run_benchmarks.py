@@ -9,9 +9,9 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from config import load_config
-from core import ImageWatermarkRemover, VideoWatermarkRemover
-from core.logger import setup_logging
+from watermark_remover.config import load_config
+from watermark_remover.core.logger import setup_logging
+from watermark_remover.core import ImageWatermarkRemover, VideoWatermarkRemover
 
 logger = logging.getLogger(__name__)
 
@@ -141,3 +141,4 @@ def main(args: Optional[argparse.Namespace] = None) -> Dict[str, List[Dict[str, 
 
 if __name__ == "__main__":
     main()
+
