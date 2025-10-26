@@ -4,6 +4,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
+import pytest
 from moviepy import VideoFileClip
 from watermark_remover.core.batch_manager import BatchItem, BatchWatermarkProcessor
 from watermark_remover.core.image_remover import ImageWatermarkRemover
@@ -15,6 +16,7 @@ from .helpers import create_synthetic_sample, create_test_video_clip
 
 
 class TestVideoWatermarkRemover(unittest.TestCase):
+    @pytest.mark.integration
     def test_video_processing_preserves_audio(self) -> None:
         image_remover = ImageWatermarkRemover()
         remover = VideoWatermarkRemover(image_remover=image_remover, reuse_mask=True)
@@ -61,6 +63,7 @@ class TestVideoWatermarkRemover(unittest.TestCase):
             finally:
                 processed_clip.close()
 
+    @pytest.mark.integration
     def test_batch_processor_handles_image_and_video(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)

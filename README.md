@@ -9,6 +9,26 @@ A powerful toolkit for removing watermarks from images and videos while preservi
 
 ---
 
+## Quickstart (CPU only)
+
+Get started in seconds with CPU-based watermark removal:
+
+```bash
+# Install
+pip install -e .
+
+# Remove watermark from an image (uses fast CPU-based Telea inpainting)
+wmr image --input photo.jpg --output clean.jpg --inpaint-method telea
+
+# Or create a test image first
+python -c "import cv2; import numpy as np; img = np.zeros((100,160,3), np.uint8); cv2.putText(img, 'WM', (10,80), cv2.FONT_HERSHEY_SIMPLEX, 2.0, (255,255,255), 4); cv2.imwrite('test.png', img)"
+wmr image --input test.png --output clean.png --inpaint-method telea
+```
+
+For GPU-accelerated methods (LaMa, Stable Diffusion), see [Optional Features](#optional-features) below.
+
+---
+
 ## Features
 
 - **Image Watermark Removal**: Remove watermarks from JPG, PNG, and other image formats

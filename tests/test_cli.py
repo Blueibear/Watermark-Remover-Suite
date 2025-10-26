@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 import cv2
+import pytest
 import yaml
 from watermark_remover.config import DEFAULT_CONFIG_PATH
 
@@ -53,6 +54,7 @@ class TestCLI(unittest.TestCase):
             restored = utils.load_image(output_path)
             self.assertEqual(restored.shape, watermarked.shape)
 
+    @pytest.mark.integration
     def test_video_command_processes_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)
@@ -70,12 +72,15 @@ class TestCLI(unittest.TestCase):
                     str(output_path),
                     "--bitrate",
                     "500k",
+                    "--inpaint-method",
+                    "telea",
                 ]
             )
 
             self.assertEqual(exit_code, 0)
             self.assertTrue(output_path.exists(), "Output video not created.")
 
+    @pytest.mark.integration
     def test_batch_command_runs_manifest(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir_name:
             tmp_dir = Path(tmp_dir_name)
