@@ -14,33 +14,53 @@ DEFAULT_PFX_PATH = "certs/watermark_dev.pfx"
 DEFAULT_PFX_PASSWORD = "testpassword"
 SHA_SUMS_FILE = Path("installers/build/SHA256SUMS.txt")
 
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Real signing for Watermark Remover Suite.")
     parser.add_argument("--input", type=Path, required=True, help="Path to unsigned executable.")
-    parser.add_argument("--output", type=Path, required=True, help="Path to write signed executable.")
-    parser.add_argument("--log", type=Path, default=Path("signature_verification.log"), help="File to append signing log entries.")
+    parser.add_argument(
+        "--output", type=Path, required=True, help="Path to write signed executable."
+    )
+    parser.add_argument(
+        "--log",
+        type=Path,
+        default=Path("signature_verification.log"),
+        help="File to append signing log entries.",
+    )
     return parser.parse_args(argv)
+
 
 def sha256(file: Path) -> str:
     return hashlib.sha256(file.read_bytes()).hexdigest()
 
+
 def sign_with_signtool(target: Path, pfx: str, pwd: str):
     print(f"🔏 Signing {target.name}...")
-    result = subprocess.run([
-        SIGNTOOL,
-        "sign",
-        "/f", pfx,
-        "/p", pwd,
-        "/fd", "SHA256",
-        "/tr", "http://timestamp.digicert.com",
-        "/td", "SHA256",
-        str(target)
-    ], capture_output=True, text=True)
+    result = subprocess.run(
+        [
+            SIGNTOOL,
+            "sign",
+            "/f",
+            pfx,
+            "/p",
+            pwd,
+            "/fd",
+            "SHA256",
+            "/tr",
+            "http://timestamp.digicert.com",
+            "/td",
+            "SHA256",
+            str(target),
+        ],
+        capture_output=True,
+        text=True,
+    )
 
     if result.returncode != 0:
         print(f"❌ Signing failed for {target.name}:\n{result.stderr}")
         sys.exit(1)
     print(f"✅ Signed {target.name}")
+
 
 def main(args: argparse.Namespace | None = None) -> None:
     if args is None:
@@ -70,6 +90,7 @@ def main(args: argparse.Namespace | None = None) -> None:
         handle.write(f"CODESIGN_PFX_PATH={cert_path}\n")
         handle.write(f"CODESIGN_PFX_PASSWORD={'***' if cert_password != 'unset' else 'unset'}\n")
         handle.write(f"SHA256: {hash_val}\n")
+
 
 if __name__ == "__main__":
     main()

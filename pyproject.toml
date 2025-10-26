@@ -9,6 +9,21 @@ description = "Watermark Remover Suite — LaMa/SD inpainting with temporal guid
 authors = [{ name = "Blueibear" }]
 readme = "README.md"
 requires-python = ">=3.11"
+license = { file = "LICENSE" }
+keywords = ["watermark", "removal", "inpainting", "lama", "stable-diffusion", "video-processing", "computer-vision"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
 dependencies = [
   "numpy>=1.26",
   "opencv-python>=4.8",
@@ -23,6 +38,11 @@ dependencies = [
   "einops>=0.7",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Blueibear/Watermark-Remover-Suite"
+Repository = "https://github.com/Blueibear/Watermark-Remover-Suite"
+Issues = "https://github.com/Blueibear/Watermark-Remover-Suite/issues"
+
 [project.optional-dependencies]
 sd = [
   "diffusers[torch]>=0.30",
@@ -32,7 +52,14 @@ sd = [
 ]
 onx = ["onnxruntime-gpu>=1.18"]
 gui = ["PySide6>=6.6"]
-develop = ["pytest>=8.1", "black>=24.3", "ruff>=0.5", "mypy>=1.10"]
+develop = [
+  "pytest>=8.1",
+  "pytest-cov>=4.1",
+  "coverage[toml]>=7.4",
+  "black>=24.3",
+  "ruff>=0.5",
+  "mypy>=1.10",
+]
 
 [project.scripts]
 wmr = "watermark_remover.cli.wmr:main"
@@ -47,3 +74,46 @@ line-length = 100
 [tool.ruff]
 line-length = 100
 select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--showlocals",
+]
+testpaths = ["tests"]
+pythonpath = ["."]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["watermark_remover", "cli", "core", "config", "backend", "ui"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@abstractmethod",
+    "@abc.abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"

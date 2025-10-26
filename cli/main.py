@@ -56,34 +56,38 @@ def _build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    image_parser = subparsers.add_parser(
-        "image", help="Process a single image file."
-    )
+    image_parser = subparsers.add_parser("image", help="Process a single image file.")
     image_parser.add_argument("-i", "--input", required=True, help="Path to the input image.")
     image_parser.add_argument("-o", "--output", required=True, help="Path for the restored image.")
     image_parser.add_argument("-m", "--mask", help="Optional binary mask image path.")
-    image_parser.add_argument("--inpaint-radius", type=_positive_int, help="Override inpainting radius.")
+    image_parser.add_argument(
+        "--inpaint-radius", type=_positive_int, help="Override inpainting radius."
+    )
     image_parser.add_argument(
         "--inpaint-method",
         choices=["telea", "ns"],
         help="Override inpainting method.",
     )
-    image_parser.add_argument("--auto-threshold", type=int, help="Override mask detection threshold.")
+    image_parser.add_argument(
+        "--auto-threshold", type=int, help="Override mask detection threshold."
+    )
     image_parser.add_argument("--auto-dilate", type=int, help="Override mask dilation iterations.")
     image_parser.add_argument("--auto-blur", type=int, help="Override mask blur kernel size.")
 
-    video_parser = subparsers.add_parser(
-        "video", help="Process a single video file."
-    )
+    video_parser = subparsers.add_parser("video", help="Process a single video file.")
     video_parser.add_argument("-i", "--input", required=True, help="Path to the input video.")
     video_parser.add_argument("-o", "--output", required=True, help="Path for the restored video.")
     video_parser.add_argument("-m", "--mask", help="Optional binary mask image path.")
     video_parser.add_argument("--reuse-mask", action=argparse.BooleanOptionalAction, default=None)
-    video_parser.add_argument("--preserve-audio", action=argparse.BooleanOptionalAction, default=None)
+    video_parser.add_argument(
+        "--preserve-audio", action=argparse.BooleanOptionalAction, default=None
+    )
     video_parser.add_argument("--codec", help="Override video codec (default from config).")
     video_parser.add_argument("--audio-codec", help="Override audio codec (default from config).")
     video_parser.add_argument("--bitrate", help="Override output bitrate, e.g. 4M.")
-    video_parser.add_argument("--auto-threshold", type=int, help="Override mask detection threshold.")
+    video_parser.add_argument(
+        "--auto-threshold", type=int, help="Override mask detection threshold."
+    )
     video_parser.add_argument("--auto-dilate", type=int, help="Override mask dilation iterations.")
     video_parser.add_argument("--auto-blur", type=int, help="Override mask blur kernel size.")
 

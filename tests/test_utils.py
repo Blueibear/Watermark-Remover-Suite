@@ -15,7 +15,9 @@ class TestUtils(unittest.TestCase):
         self.image = base
 
     def test_detect_watermark_mask_threshold(self) -> None:
-        mask = utils.detect_watermark_mask(self.image, method="threshold", threshold=200, dilate_iterations=1)
+        mask = utils.detect_watermark_mask(
+            self.image, method="threshold", threshold=200, dilate_iterations=1
+        )
         self.assertEqual(mask.dtype, np.uint8)
         self.assertEqual(mask.shape, self.image.shape[:2])
         self.assertGreater(np.count_nonzero(mask), 0)

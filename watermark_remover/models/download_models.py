@@ -30,8 +30,12 @@ def print_instructions() -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Prepare model cache for the Watermark Remover Suite.")
-    parser.add_argument("--all", action="store_true", help="Reserved flag for future automatic downloads.")
+    parser = argparse.ArgumentParser(
+        description="Prepare model cache for the Watermark Remover Suite."
+    )
+    parser.add_argument(
+        "--all", action="store_true", help="Reserved flag for future automatic downloads."
+    )
     parser.parse_args(argv)
     ensure_cache()
     print_instructions()

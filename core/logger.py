@@ -42,7 +42,9 @@ def setup_logging(settings: Mapping[str, object], *, force: bool = False) -> Non
     if console_settings.get("enabled", True):
         if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
             console_handler = logging.StreamHandler()
-            console_format = console_settings.get("format", "%(levelname)s | %(name)s | %(message)s")
+            console_format = console_settings.get(
+                "format", "%(levelname)s | %(name)s | %(message)s"
+            )
             console_handler.setFormatter(logging.Formatter(console_format))
             root_logger.addHandler(console_handler)
 
