@@ -1,13 +1,11 @@
 """Thin image wrapper for MVP pipeline - safe to import in tests."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Tuple, TYPE_CHECKING
+from typing import Any, Mapping, Optional, Tuple
 
-# Lazy import to avoid heavy work at import time
-if TYPE_CHECKING:
-    from .pipeline import process_image
 
 @dataclass
 class ImageWatermarkRemover:
@@ -21,17 +19,24 @@ class ImageWatermarkRemover:
     auto_mask_defaults: Optional[dict[str, Any]] = None
 
     @classmethod
-    def from_config(cls, config: dict, **kwargs: Any) -> "ImageWatermarkRemover":
+    def from_config(cls, config: Mapping[str, Any], **kwargs: Any) -> "ImageWatermarkRemover":
         """Create from config dict (for UI compatibility)."""
-        # Extract relevant fields from config, using defaults
-        image_cfg = config.get("image", {})
+        image_cfg = dict(config.get("image_processing", {}))
+        detection_cfg = dict(image_cfg.get("detection", {}))
+        dilate_default = detection_cfg.get("dilate_iterations", image_cfg.get("dilate", 5))
+        if dilate_default is not None:
+            try:
+                dilate_default = int(dilate_default)
+            except (TypeError, ValueError):
+                dilate_default = 5
         return cls(
-            method=image_cfg.get("method", "telea"),
+            method=image_cfg.get("inpaint_method", "telea"),
             mask_mode=image_cfg.get("mask_mode", "auto"),
-            dilate=image_cfg.get("dilate", 5),
+            dilate=dilate_default if isinstance(dilate_default, int) else 5,
             seed=image_cfg.get("seed", 1234),
             inpaint_radius=image_cfg.get("inpaint_radius", 3),
-            **kwargs
+            auto_mask_defaults=detection_cfg or None,
+            **kwargs,
         )
 
     def run(self, input_path: str | Path, output_path: str | Path, **kwargs: Any) -> None:
@@ -39,6 +44,14 @@ class ImageWatermarkRemover:
         from .pipeline import process_image  # Import here to avoid import-time deps
 
         args: dict[str, Any] = dict(kwargs)
+        # Compatibility: discard unsupported keys from higher-level callers
+        auto_mask_kwargs = args.pop("auto_mask_kwargs", None)
+        args.pop("auto_mask_defaults", None)
+        if auto_mask_kwargs:
+            # Allow simple overrides when provided
+            dilate_override = auto_mask_kwargs.get("dilate_iterations")
+            if dilate_override is not None:
+                args.setdefault("dilate", dilate_override)
         args.setdefault("method", self.method)
         args.setdefault("mask_mode", self.mask_mode)
         args.setdefault("dilate", self.dilate)
