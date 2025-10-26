@@ -1,5 +1,10 @@
 # Watermark Remover Suite
 
+[![CI](https://github.com/Blueibear/Watermark-Remover-Suite/workflows/CI/badge.svg)](https://github.com/Blueibear/Watermark-Remover-Suite/actions)
+[![codecov](https://codecov.io/gh/Blueibear/Watermark-Remover-Suite/branch/main/graph/badge.svg)](https://codecov.io/gh/Blueibear/Watermark-Remover-Suite)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A powerful toolkit for removing watermarks from images and videos while preserving the original content quality. Features both command-line and graphical user interfaces for easy use.
 
 ---
@@ -239,6 +244,63 @@ logging:
 - Ensure Python 3.11+ is installed
 - Update pip: `pip install --upgrade pip`
 - Install system dependencies (FFmpeg for video processing)
+
+---
+
+## Development
+
+### Setting Up Development Environment
+
+```bash
+# Create and activate virtual environment
+make setup
+
+# Or manually:
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e .[develop]
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage report
+make test-cov
+
+# Generate HTML coverage report
+make test-cov-html
+```
+
+### Code Quality
+
+```bash
+# Format code with Black
+make format
+
+# Run linting with Ruff
+make lint
+```
+
+### Available Make Commands
+
+- `make setup` - Create virtual environment and install dev dependencies
+- `make test` - Run tests with pytest
+- `make test-cov` - Run tests with coverage report (terminal + XML)
+- `make test-cov-html` - Generate HTML coverage report
+- `make format` - Format code with Black and Ruff
+- `make lint` - Check code quality with Ruff
+- `make clean` - Remove build artifacts and caches
+
+### Continuous Integration
+
+This project uses GitHub Actions for CI/CD:
+- **Tests**: Run on Python 3.11 and 3.12
+- **Linting**: Black, Ruff, and mypy checks
+- **Coverage**: Reports uploaded to Codecov
+- **Build**: Package distribution checks
 
 ---
 

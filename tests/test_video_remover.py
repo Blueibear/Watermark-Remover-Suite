@@ -5,11 +5,12 @@ from pathlib import Path
 import cv2
 import numpy as np
 from moviepy import VideoFileClip
+from watermark_remover.core.batch_manager import BatchItem, BatchWatermarkProcessor
+from watermark_remover.core.image_remover import ImageWatermarkRemover
+from watermark_remover.core.video_remover import VideoWatermarkRemover
 
-from core import utils
-from core.batch_manager import BatchItem, BatchWatermarkProcessor
-from core.image_remover import ImageWatermarkRemover
-from core.video_remover import VideoWatermarkRemover
+from watermark_remover.core import utils
+
 from .helpers import create_synthetic_sample, create_test_video_clip
 
 
@@ -74,7 +75,9 @@ class TestVideoWatermarkRemover(unittest.TestCase):
             image_output = tmp_dir / "restored.png"
             video_output = tmp_dir / "restored.mp4"
 
-            processor = BatchWatermarkProcessor(config={"batch": {"max_workers": 2, "halt_on_error": False}})
+            processor = BatchWatermarkProcessor(
+                config={"batch": {"max_workers": 2, "halt_on_error": False}}
+            )
             jobs = [
                 BatchItem(
                     media_type="image",

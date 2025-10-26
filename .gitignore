@@ -25,6 +25,9 @@ installers/build/
 
 verification_reports/logs/
 .coverage
+htmlcov/
+coverage.xml
+.pytest_cache/
 
 # Benchmarks
 benchmarks/results/
