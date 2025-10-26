@@ -1,65 +1,90 @@
-"""Lightweight logger utility for Watermark Remover Suite."""
+"""Structured logging helpers for the Watermark Remover Suite."""
 
 from __future__ import annotations
+
 import logging
-from typing import Optional, Union
+import os
+from logging import Handler
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from typing import Iterable, Mapping, Optional
 
-def setup_logging(
-    level: Union[int, str] = "INFO",
-    use_rich: bool = True,
-    name: Optional[str] = None,
-    config: Optional[dict] = None,
-    force: bool = False
-) -> logging.Logger:
-    """
-    Create/configure a logger without global side effects.
-    Safe to import in tests.
+DEFAULT_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
-    Args:
-        level: Logging level (e.g., "INFO", logging.INFO)
-        use_rich: Whether to use RichHandler if available
-        name: Logger name (defaults to "watermark_remover")
-        config: Optional config dict (for compatibility with existing code)
-        force: Force reconfiguration even if handlers exist
 
-    Returns:
-        Configured logger instance
-    """
-    # Handle config dict parameter (for compatibility with existing code)
-    if config is not None:
-        level = config.get("level", level)
-        use_rich = config.get("use_rich", use_rich)
+def _remove_handlers(handlers: Iterable[Handler]) -> None:
+    for handler in handlers:
+        handler.close()
 
-    logger_name = name or "watermark_remover"
-    logger = logging.getLogger(logger_name)
 
-    # Idempotent: don't add duplicate handlers unless force=True
-    if not logger.handlers or force:
-        # Clear existing handlers if force=True
-        if force:
-            logger.handlers.clear()
+def _resolve_log_path(filename: str) -> Path:
+    # Support both Windows (%VAR%) and Unix ($VAR) style env vars
+    import re
+    def expand_windows_style(text: str) -> str:
+        """Expand %VAR% style environment variables."""
+        def replacer(match):
+            var_name = match.group(1)
+            return os.environ.get(var_name, match.group(0))
+        return re.sub(r'%([^%]+)%', replacer, text)
 
-        lvl = logging.getLevelName(level) if isinstance(level, str) else level
-        logger.setLevel(lvl)
+    expanded_filename = expand_windows_style(filename)
+    expanded = Path(os.path.expandvars(expanded_filename)).expanduser()
+    try:
+        expanded.parent.mkdir(parents=True, exist_ok=True)
+        return expanded
+    except OSError:
+        fallback_dir = Path("./logs")
+        fallback_dir.mkdir(parents=True, exist_ok=True)
+        return fallback_dir / Path(filename).name
 
-        handler: logging.Handler
-        if use_rich:
-            try:
-                from rich.logging import RichHandler  # type: ignore
-                handler = RichHandler(rich_tracebacks=False, show_time=True, show_path=False)
-            except Exception:
-                handler = logging.StreamHandler()
-        else:
-            handler = logging.StreamHandler()
 
-        fmt = logging.Formatter("%(levelname)s %(name)s: %(message)s")
-        # RichHandler ignores formatter format; still attach for fallback
-        try:
-            handler.setFormatter(fmt)
-        except Exception:
-            pass
+def setup_logging(settings: Mapping[str, object], *, force: bool = False) -> None:
+    """Configure logging handlers based on YAML configuration."""
+    level = str(settings.get("level", "INFO")).upper()
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
 
-        logger.addHandler(handler)
-        logger.propagate = False
+    if force:
+        _remove_handlers(root_logger.handlers)
+        root_logger.handlers.clear()
 
-    return logger
+    console_settings = settings.get("console", {}) or {}
+    if console_settings.get("enabled", True):
+        if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
+            console_handler = logging.StreamHandler()
+            console_format = console_settings.get(
+                "format", "%(levelname)s | %(name)s | %(message)s"
+            )
+            console_handler.setFormatter(logging.Formatter(console_format))
+            root_logger.addHandler(console_handler)
+
+    file_settings = settings.get("file", {}) or {}
+    if file_settings.get("enabled", False):
+        filename = file_settings.get("filename")
+        if not filename:
+            raise ValueError("File logging enabled but no filename provided.")
+        log_path = _resolve_log_path(filename)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        rotate_bytes = int(file_settings.get("rotate_bytes", 1_048_576))
+        backups = int(file_settings.get("backups", 5))
+        existing = [
+            h
+            for h in root_logger.handlers
+            if isinstance(h, RotatingFileHandler)
+            and Path(getattr(h, "baseFilename", "")).resolve() == log_path.resolve()
+        ]
+        if not existing:
+            file_handler = RotatingFileHandler(
+                log_path, maxBytes=rotate_bytes, backupCount=backups, encoding="utf-8"
+            )
+            file_format = file_settings.get("format", DEFAULT_FORMAT)
+            file_handler.setFormatter(logging.Formatter(file_format))
+            root_logger.addHandler(file_handler)
+
+
+def get_logger(name: Optional[str] = None) -> logging.Logger:
+    """Helper to retrieve a module-specific logger."""
+    return logging.getLogger(name)
+
+
+__all__ = ["setup_logging", "get_logger", "DEFAULT_FORMAT"]
