@@ -26,7 +26,7 @@ jobs:
           python-version: ${{ matrix.python }}
           cache: 'pip'
 
-      # FFmpeg installation
+      # === FFmpeg Installation ===
       - name: Install FFmpeg (Ubuntu)
         if: runner.os == 'Linux'
         run: |
@@ -41,12 +41,13 @@ jobs:
         if: runner.os == 'Windows'
         uses: FedericoCarboni/setup-ffmpeg@v3
 
-      - name: Install dependencies
+      # === Dependencies ===
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .[develop,test]
 
-      # Linting
+      # === Code Quality ===
       - name: Ruff lint check
         run: ruff check .
 
@@ -56,15 +57,16 @@ jobs:
       - name: Type check with mypy
         run: mypy watermark_remover --ignore-missing-imports || true
 
-      # CPU-only test suite
+      # === Tests ===
       - name: Run CPU baseline tests
         run: |
-          pytest -v -m "not gpu and not integration and not slow and not windows_only" --tb=short --cov --cov-report=xml --cov-report=term-missing
+          pytest -v -m "not gpu and not integration and not slow and not windows_only" \
+            --tb=short \
+            --cov --cov-report=xml --cov-report=term-missing
 
       - name: CLI Smoke Test
         run: wmr --help
 
-      # Upload test logs if failure occurs
       - name: Upload test results (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
@@ -111,4 +113,5 @@ jobs:
         with:
           name: dist
           path: dist/
+
 
