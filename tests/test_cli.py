@@ -16,7 +16,7 @@ from .helpers import create_synthetic_sample, create_test_video_clip
 
 class TestCLI(unittest.TestCase):
     def run_cli(self, args: list[str]) -> int:
-        exit_code = cli_main.main(args)
+        exit_code = cli_main(args)
         logging.shutdown()
         logging.getLogger().handlers.clear()
         return exit_code

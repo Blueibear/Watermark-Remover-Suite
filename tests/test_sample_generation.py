@@ -50,7 +50,7 @@ class TestSampleGeneration(unittest.TestCase):
                 "DEBUG",
             ]
             with mock.patch.object(sys, "argv", test_args):
-                runpy.run_module("backend.generate_samples", run_name="__main__")
+                runpy.run_module("watermark_remover.backend.generate_samples", run_name="__main__")
             self.assertTrue(any(images_dir.iterdir()))
 
     def test_run_benchmarks_skips_missing_dirs(self) -> None:
@@ -79,7 +79,7 @@ class TestSampleGeneration(unittest.TestCase):
                 images=sample_images,
                 videos=root / "sample_inputs" / "videos",
                 output=output_dir,
-                config=root / "config" / "config.yaml",
+                config=root / "watermark_remover" / "config" / "config.yaml",
                 log_level="INFO",
                 videos_enabled=False,
             )
