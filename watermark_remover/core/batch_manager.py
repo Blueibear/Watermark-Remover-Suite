@@ -1,19 +1,35 @@
-"""Batch processing wrapper - safe to import in tests."""
+"""Batch processing helpers - thin wrappers for batch CLI compatibility."""
 
 from __future__ import annotations
+
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 from .image_remover import ImageWatermarkRemover
 from .video_remover import VideoWatermarkRemover
 
+logger = logging.getLogger(__name__)
+
+PathLike = Union[str, Path]
+MediaType = str
+
+
+@dataclass
+class BatchItem:
+    media_type: MediaType
+    input_path: PathLike
+    output_path: PathLike
+    mask_path: Optional[PathLike] = None
+    auto_mask_kwargs: Optional[Dict[str, Any]] = None
+
 
 @dataclass
 class BatchResult:
-    """Result from batch processing a single item."""
     success: bool
-    media_type: str
+    media_type: MediaType
     input_path: Path
     output_path: Optional[Path] = None
     mask_path: Optional[Path] = None
@@ -28,39 +44,142 @@ class BatchWatermarkProcessor:
         image_remover: Optional[ImageWatermarkRemover] = None,
         video_remover: Optional[VideoWatermarkRemover] = None,
         *,
-        config: Optional[dict[str, Any]] = None,
+        config: Optional[Mapping[str, Any]] = None,
     ) -> None:
-        self.image_remover = image_remover or ImageWatermarkRemover()
-        self.video_remover = video_remover or VideoWatermarkRemover()
-        self.config = dict(config or {})
+        config_map = dict(config or {})
+        batch_settings = dict(config_map.get("batch", {}))
+        self.halt_on_error = bool(batch_settings.get("halt_on_error", False))
+        self.max_workers = int(batch_settings.get("max_workers", 1))
 
-    def process_batch(self, items: list[dict[str, Any]]) -> list[BatchResult]:
-        """Process a batch of items (placeholder for MVP)."""
-        results = []
-        for item in items:
-            try:
-                media_type = item.get("media_type", "image")
-                input_path = Path(item["input_path"])
-                output_path = Path(item["output_path"])
+        if image_remover is None:
+            if config_map:
+                image_remover = ImageWatermarkRemover.from_config(config_map)
+            else:
+                image_remover = ImageWatermarkRemover()
+        self.image_remover = image_remover
 
-                if media_type == "image":
-                    self.image_remover.process_file(input_path, output_path)
-                elif media_type == "video":
-                    self.video_remover.process_file(input_path, output_path)
-                else:
-                    raise ValueError(f"Unsupported media type: {media_type}")
+        if video_remover is None:
+            if config_map:
+                video_remover = VideoWatermarkRemover.from_config(
+                    config_map, image_remover=self.image_remover
+                )
+            else:
+                video_remover = VideoWatermarkRemover(image_remover=self.image_remover)
+        self.video_remover = video_remover
 
-                results.append(BatchResult(
+    def _resolve_auto_mask_kwargs(
+        self, media_type: MediaType, overrides: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        if overrides:
+            return overrides
+        if media_type == "image" and self.image_remover.auto_mask_defaults:
+            return dict(self.image_remover.auto_mask_defaults)
+        if media_type == "video" and self.video_remover.auto_mask_defaults:
+            return dict(self.video_remover.auto_mask_defaults)
+        return overrides
+
+    def _process_image(
+        self, item: BatchItem, auto_mask_kwargs: Optional[Dict[str, Any]]
+    ) -> Tuple[Path, Path]:
+        return self.image_remover.process_file(
+            item.input_path,
+            item.output_path,
+            mask_path=item.mask_path,
+            auto_mask_kwargs=auto_mask_kwargs,
+        )
+
+    def _process_video(self, item: BatchItem, auto_mask_kwargs: Optional[Dict[str, Any]]) -> Path:
+        return self.video_remover.process_file(
+            item.input_path,
+            item.output_path,
+            mask_path=item.mask_path,
+            auto_mask_kwargs=auto_mask_kwargs,
+        )
+
+    def _execute_item(self, item: BatchItem) -> BatchResult:
+        input_path = Path(item.input_path)
+        media_type = item.media_type.lower()
+        logger.info("Batch processing %s", input_path)
+        auto_kwargs = self._resolve_auto_mask_kwargs(media_type, item.auto_mask_kwargs)
+        try:
+            if media_type == "image":
+                output_path, mask_path = self._process_image(item, auto_kwargs)
+                return BatchResult(
                     success=True,
                     media_type=media_type,
                     input_path=input_path,
                     output_path=output_path,
-                ))
-            except Exception as e:
-                results.append(BatchResult(
-                    success=False,
-                    media_type=item.get("media_type", "unknown"),
-                    input_path=Path(item.get("input_path", "")),
-                    error=str(e),
-                ))
+                    mask_path=mask_path,
+                )
+            if media_type == "video":
+                output_path = self._process_video(item, auto_kwargs)
+                return BatchResult(
+                    success=True,
+                    media_type=media_type,
+                    input_path=input_path,
+                    output_path=output_path,
+                )
+            raise ValueError(f"Unsupported media type: {item.media_type}")
+        except Exception as exc:  # pragma: no cover - error path
+            logger.exception("Failed to process %s: %s", input_path, exc)
+            return BatchResult(
+                success=False,
+                media_type=media_type,
+                input_path=input_path,
+                error=str(exc),
+            )
+
+    def process(self, items: Iterable[BatchItem]) -> List[BatchResult]:
+        item_list = list(items)
+        if not item_list:
+            return []
+
+        order_map = {Path(item.input_path): idx for idx, item in enumerate(item_list)}
+
+        if self.max_workers <= 1 or self.halt_on_error:
+            results: List[BatchResult] = []
+            for item in item_list:
+                result = self._execute_item(item)
+                results.append(result)
+                if self.halt_on_error and not result.success:
+                    break
+            return results
+
+        results: List[BatchResult] = []
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_item = {executor.submit(self._execute_item, item): item for item in item_list}
+            for future in as_completed(future_to_item):
+                result = future.result()
+                results.append(result)
+                if self.halt_on_error and not result.success:
+                    executor.shutdown(cancel_futures=True)
+                    break
+        results.sort(key=lambda r: order_map.get(r.input_path, 0))
         return results
+
+    def process_batch(self, items: list[dict[str, Any]]) -> List[BatchResult]:
+        """Compatibility helper accepting dictionaries describing jobs."""
+
+        batch_items: List[BatchItem] = []
+        for item in items:
+            media_type = item.get("media_type") or item.get("type")
+            if not media_type:
+                raise ValueError("Batch item missing media type")
+            input_path = item.get("input_path", item.get("input"))
+            output_path = item.get("output_path", item.get("output"))
+            if not input_path or not output_path:
+                raise ValueError("Batch item missing input or output path")
+            batch_items.append(
+                BatchItem(
+                    media_type=media_type,
+                    input_path=input_path,
+                    output_path=output_path,
+                    mask_path=item.get("mask_path") or item.get("mask"),
+                    auto_mask_kwargs=item.get("auto_mask_kwargs") or item.get("auto_mask"),
+                )
+            )
+        return self.process(batch_items)
+
+
+__all__ = ["BatchItem", "BatchResult", "BatchWatermarkProcessor"]
+
